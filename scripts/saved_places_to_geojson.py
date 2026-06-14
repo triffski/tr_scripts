@@ -135,6 +135,34 @@ def write_kml(listname, feats, out):
     with open(os.path.join(out, f"{listname}.kml"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(parts))
 
+
+def write_gpx(listname, feats, out):
+    """Write a .gpx with waypoints for OsmAnd Favourites import. Each <wpt> becomes
+    a favourite; <type> groups them under the list name so categories survive."""
+    def esc(s):
+        s = s or ""
+        return (s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                 .replace('"',"&quot;"))
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<gpx version="1.1" creator="saved_places" xmlns="http://www.topografix.com/GPX/1/1">']
+    for f in feats:
+        p = f["properties"]
+        lon, lat = f["geometry"]["coordinates"]
+        name = esc(p.get("google_match") or p.get("name"))
+        desc_bits = []
+        if p.get("google_address"): desc_bits.append(esc(p["google_address"]))
+        if p.get("note"):           desc_bits.append("Note: " + esc(p["note"]))
+        if p.get("google_maps_url"):desc_bits.append(esc(p["google_maps_url"]))
+        desc = " | ".join(desc_bits)
+        parts += [f'  <wpt lat="{lat}" lon="{lon}">',
+                  f'    <name>{name}</name>',
+                  f'    <desc>{desc}</desc>',
+                  f'    <type>{esc(listname)}</type>',
+                  '  </wpt>']
+    parts += ['</gpx>']
+    with open(os.path.join(out, f"{listname}.gpx"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(parts))
+
 def main():
     if len(sys.argv) != 3:
         sys.exit("Usage: python3 saved_places_to_geojson_v4.py <csv_folder> <output_folder>")
@@ -185,7 +213,8 @@ def main():
         json.dump({"type":"FeatureCollection","features":feats},
                   open(os.path.join(out,f"{listname}.geojson"),"w"), indent=2, ensure_ascii=False)
         write_kml(listname, feats, out)
-        print(f"{listname}: {len(feats)} features (.geojson + .kml)")
+        write_gpx(listname, feats, out)
+        print(f"{listname}: {len(feats)} features (.geojson + .kml + .gpx)")
 
     if review:
         with open(os.path.join(out,"_geocoding_review.csv"),"w",newline="",encoding="utf-8") as f:
