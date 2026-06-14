@@ -6,7 +6,7 @@ Somewhere to store random scripts, batch files and whatnot.
 
 |Name|Description|
 |----|-----------|
-|google_saved_places_exporter.py|Convert stuff you've saved in your Google account for use anywhere that can import GeoJSON, KML or CSV data (OsmAnd, Organic Maps etc). "Saved" list CSVs become one GeoJSON/KML/CSV per list, with coordinates. <br/><br/> Stage 2 will also process a 'Saved Places.json' containing *all* of your saved locations, exclude any found in the .csv files, then use the Maps API to reverse geocode the remainder to the nearest found location (within 25m).|
+|google_saved_places_exporter.py|Convert stuff you've saved in your Google Maps account for use anywhere that can import GeoJSON, KML or CSV data (OsmAnd, Organic Maps etc). "Saved" list CSVs become one GeoJSON/KML/CSV per list, with coordinates. <br/><br/> Stage 2 will also process a 'Saved Places.json' containing *all* of your saved locations, exclude any found in the .csv files, then use the Maps API to reverse geocode the remainder to the nearest found location (within 25m).|
 
 # Google Saved Places Exporter
   
