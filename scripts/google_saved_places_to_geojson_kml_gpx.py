@@ -17,11 +17,12 @@ API KEY HANDLING (safe to push to GitHub):
 Requires: Places API (New) enabled on a billing-enabled Google Cloud project.
 Cost: field-masked to 'location' + 'displayName' = cheapest tier; ~500 lookups is
 well within the monthly free credit.
+  Cache: .cache/places_cache.json inside the output folder (re-run safe).
 
 Usage:
     python3 -m pip install requests --break-system-packages
     echo 'AIza...' > google_api_key.txt
-    python3 saved_places_to_geojson_v4.py . ./output_google
+    python3 google_saved_places_to_geojson_kml_gpx.py . ./output_google
 """
 
 import csv, glob, json, os, re, sys, time
@@ -35,8 +36,10 @@ LIST_HINTS = {
     "Liverpool_Pubs": "Liverpool, UK",
     "Beer_gardens":   "Liverpool, UK",
     "Vietnam":        "Vietnam",
-    # Want_to_go / Favourite_places / got_hates_flags: global, no hint
+    # Want_to_go / Favourite_places: global, no hint
 }
+
+
 
 coord_patterns = [
     re.compile(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)"),
@@ -106,6 +109,27 @@ def places_search(query, key, cache):
     return res
 
 
+
+import re as _re
+_COORDISH = _re.compile(r'^[\d\s°\'".,NSEW+-]+$')
+
+def display_name_and_extra(p):
+    """Returns (name, extra_desc).
+    If the saved title is a bare coordinate string:
+      - with a note: use the note as the name, push the coordinate into description.
+      - without a note: keep the coordinate as the name, no extra.
+    Otherwise: use google_match or the title as normal.
+    """
+    title = (p.get("name") or "").strip()
+    note  = (p.get("note") or "").strip()
+    gmatch = (p.get("google_match") or "").strip()
+    is_coord = bool(title) and bool(_COORDISH.match(title)) and any(c in title for c in "°NSEW")
+    if is_coord:
+        if note:
+            return note, f"Coordinates: {title}"
+        return title, ""
+    return (gmatch or title), ""
+
 def write_kml(listname, feats, out):
     """Write a .kml bookmark set for Organic Maps / OsmAnd. One file per list =
     one toggleable bookmark group on the phone."""
@@ -120,10 +144,12 @@ def write_kml(listname, feats, out):
     for f in feats:
         p = f["properties"]
         lon, lat = f["geometry"]["coordinates"]
-        name = esc(p.get("google_match") or p.get("name"))
+        dname, extra = display_name_and_extra(p)
+        name = esc(dname)
         desc_bits = []
         if p.get("google_address"): desc_bits.append(esc(p["google_address"]))
-        if p.get("note"):           desc_bits.append(esc(p["note"]))
+        if extra:                   desc_bits.append(esc(extra))
+        if p.get("note") and not extra: desc_bits.append(esc(p["note"]))
         if p.get("google_maps_url"):desc_bits.append(esc(p["google_maps_url"]))
         desc = "&#10;".join(desc_bits)
         parts += ['  <Placemark>',
@@ -144,34 +170,61 @@ def write_gpx(listname, feats, out):
         return (s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                  .replace('"',"&quot;"))
     parts = ['<?xml version="1.0" encoding="UTF-8"?>',
-             '<gpx version="1.1" creator="saved_places" xmlns="http://www.topografix.com/GPX/1/1">']
+             '<gpx version="1.1" creator="saved_places" xmlns="http://www.topografix.com/GPX/1/1" xmlns:osmand="https://osmand.net">']
     for f in feats:
         p = f["properties"]
         lon, lat = f["geometry"]["coordinates"]
-        name = esc(p.get("google_match") or p.get("name"))
+        dname, extra = display_name_and_extra(p)
+        name = esc(dname)
+        address = esc(p.get("google_address") or "")
+        # Description carries only things with no dedicated OsmAnd field:
+        # the recommendation note, the original maps URL, and (for coordinate-titled
+        # pins) the original coordinate string. Address goes in <osmand:address>.
         desc_bits = []
-        if p.get("google_address"): desc_bits.append(esc(p["google_address"]))
-        if p.get("note"):           desc_bits.append("Note: " + esc(p["note"]))
+        if extra:                   desc_bits.append(esc(extra))
+        if p.get("note") and not extra: desc_bits.append("Note: " + esc(p["note"]))
         if p.get("google_maps_url"):desc_bits.append(esc(p["google_maps_url"]))
         desc = " | ".join(desc_bits)
-        parts += [f'  <wpt lat="{lat}" lon="{lon}">',
-                  f'    <name>{name}</name>',
-                  f'    <desc>{desc}</desc>',
-                  f'    <type>{esc(listname)}</type>',
-                  '  </wpt>']
+        wpt = [f'  <wpt lat="{lat}" lon="{lon}">',
+               f'    <name>{name}</name>',
+               f'    <desc>{desc}</desc>',
+               f'    <type>{esc(listname)}</type>']
+        # Styling intentionally omitted: set per-group "Default appearance" in
+        # OsmAnd instead (Favorites -> group -> Default appearance). Per-waypoint
+        # icon/colour extensions would OVERRIDE that group setting, so we don't write
+        # them. Only <osmand:address> is emitted, to populate the Address field.
+        if address:
+            wpt += ['    <extensions>',
+                    f'      <osmand:address>{address}</osmand:address>',
+                    '    </extensions>']
+        wpt.append('  </wpt>')
+        parts += wpt
     parts += ['</gpx>']
     with open(os.path.join(out, f"{listname}.gpx"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(parts))
 
 def main():
     if len(sys.argv) != 3:
-        sys.exit("Usage: python3 saved_places_to_geojson_v4.py <csv_folder> <output_folder>")
+        sys.exit("Usage: python3 google_saved_places_to_geojson_kml_gpx.py <csv_folder> <output_folder>")
     csv_folder, out = sys.argv[1], sys.argv[2]
     key = load_key()
     os.makedirs(out, exist_ok=True)
-    cache_path = os.path.join(out, "places_cache.json")
+    cache_dir = os.path.join(out, ".cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, "places_cache.json")
     cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
     review = []
+
+    # Stage the merged 'Saved Places.json' into the output folder so the companion
+    # script (google_geocode_starred_places.py) finds everything it needs in one
+    # place: this script's per-list .geojson output PLUS the merged export.
+    import shutil
+    for cand in glob.glob(os.path.join(csv_folder, "Saved[ _]Places.json")):
+        try:
+            shutil.copy2(cand, os.path.join(out, os.path.basename(cand)))
+            print(f"staged {os.path.basename(cand)} -> {out}")
+        except Exception as e:
+            print(f"could not stage {os.path.basename(cand)}: {e}")
 
     files = glob.glob(os.path.join(csv_folder, "*.csv"))
     files += [f for f in glob.glob(os.path.join(csv_folder, "*")) if "homes_and" in os.path.basename(f)]
