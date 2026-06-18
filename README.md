@@ -61,16 +61,18 @@ What it does (deliberately basic):
   - No albums   (Instagram has none; use your importer's "into album" option).
   - No comments (Instagram's export does not include comment threads on your posts).
 
-Input/output folders:
-  --input   is treated as READ-ONLY. Nothing is ever written or renamed there.
-  --output  receives enriched COPIES, mirroring the source's media subfolder structure.
-            Use --clean to wipe it first for a guaranteed fresh rebuild.
-Usage:
-    Look at the export structure first (input only):
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --inspect
-    
-    Dry run a few items:
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --dry-run --limit 5
+Input/output folders:  
 
-    Real run, wiping output first:
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --clean
+  ```--input```   is treated as READ-ONLY. Nothing is ever written or renamed there.  
+  ```--output```  receives enriched COPIES, mirroring the source's media subfolder structure.vUse  
+  ```--clean``` to wipe it first for a guaranteed fresh rebuild.  
+  
+Usage:  
+    Look at the export structure first (input only):
+    ```python3 instagram_exif_encombinator.py --input /data/ig_export/json --inspect```  
+    
+Dry run a few items:  
+    ```python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --dry-run --limit 5```  
+    
+Real run, wiping output first:  
+    ```python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --clean```
