@@ -7,9 +7,7 @@ Somewhere to store random scripts, batch files and whatnot.
 |Name|Description|
 |----|-----------|
 |google_saved_places_exporter.py|Convert custom place lists saved to your Google Maps account into GeoJSON, KML and GPX for use anywhere that imports them (OsmAnd, Organic Maps, etc.). <br><br>Stage 1 geocodes your 'Saved' list CSVs via the Google Places API; Stage 2 (optional) reconstructs the Starred/visited list Takeout won't export; Stage 3 (optional, slow) corrects ambiguous-name mismatches by re-resolving each pin through its real Google Maps URL.|
-|instagram_exif_encombinator.py|Instagram strips EXIF on upload and keeps the real metadata (post dates, captions, GPS)
-in sidecar JSON. This reads `content/posts_*.json` and writes that metadata INTO copies
-of the photos with exiftool. Download your data in JSON format and ensure the script has access to exiftool.|
+|instagram_exif_encombinator.py|Instagram strips EXIF on upload and keeps the real metadata (post dates, captions, GPS) in sidecar JSON. This reads `content/posts_*.json` and writes that metadata back into your downloaded photos with exiftool. Grab your data in JSON format and ensure the script has access to exiftool.|
 
 # Google Saved Places Exporter
   
