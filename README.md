@@ -1,6 +1,8 @@
 # Scripts 'n stuff
 
-Somewhere to store random scripts and whatnot. Everything was made for my own use and is provided as-is, without warranty. Read the docstrings for more info, back up your files first and don't blame me if something goes wrong.
+Somewhere to store random scripts and whatnot. Everything was made for my own use and is provided as-is, without warranty. 
+
+Read the docstrings for more info, back up your files first and don't blame me if you didn't and something goes wrong! :)
 
 | Name | Description |
 |------|-------------|
