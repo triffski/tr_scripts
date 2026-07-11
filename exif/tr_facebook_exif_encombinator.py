@@ -6,43 +6,53 @@ ready for Immich, preserving album structure.
 Facebook strips EXIF on upload and keeps the real metadata (capture dates, captions, GPS)
 in per-album sidecar JSON (your_facebook_activity/posts/album/N.json). This reads those
 album files and writes the metadata INTO copies of the photos with exiftool, grouping the
-output one folder per album so a downstream importer (immich-go `upload from-folder
---folder-as-album FOLDER`) recreates your albums by name, and Immich gets correct dates,
-captions and source tags instead of dateless files stamped with today.
+output one folder per album so immich-go's `upload from-folder --folder-as-album FOLDER`
+recreates your albums by name, and Immich gets correct dates, captions and tags instead of
+dateless files stamped with today.
 
-What it does:
-  - album name (from N.json)      -> output subfolder, prefixed with the album's earliest
-                                     photo date as "YYYY_MM_DD - Name", so albums sort
-                                     chronologically by name in Immich. -> Immich album
-                                     via --folder-as-album.
-  - caption (photo title)         -> description
-  - taken_timestamp (else upload) -> DateTimeOriginal / QuickTime CreateDate for video
-  - album "From" date fallback    -> a photo with NO date of its own inherits the album's
-                                     earliest photo date. Photos with their own date are
-                                     never overwritten.
-  - GPS                           -> if present in exif_data
-  - tags                          -> facebook + a dated batch tag (default fb_2026_06),
-                                     embedded so the whole batch stays cullable by tag
-  - Optional album exclusion via --exclude-album (none excluded by default).
+Tags written into each file (read by Immich on import):
+  - src_facebook_<batch>   flat provenance tag (default src_facebook_2026_06), so the whole
+                           batch is findable/cullable and the source is always knowable.
+  - F/<album name>         hierarchical album tag, nesting each album under an "F" parent.
+
+Also:
+  - album name -> output subfolder, prefixed with the album's earliest photo date as
+    "YYYY_MM_DD - Name", so albums sort chronologically by name in Immich.
+  - caption (photo title) -> description.
+  - taken_timestamp (else upload time) -> DateTimeOriginal / QuickTime CreateDate (video).
+  - album "From" date fallback: a photo with no date of its own inherits the album's
+    earliest photo date. Photos with their own date are never overwritten.
+  - GPS if present in exif_data.
   - Fixes mislabelled files: media whose extension lies about the content (e.g. a JPEG
     named .webp/.heic) is renamed in the OUTPUT to the real format (magic-number sniff).
+  - last_modified_timestamp is deliberately NOT used for dates - Facebook bulk-restamps it.
   - No comments: this export vintage doesn't include comment threads on album photos.
 
-Note: album last_modified_timestamp is deliberately NOT used - Facebook bulk-restamps it
-during backend migrations, so it's unreliable. The "From" date (earliest photo) is used
-instead, derived from the trustworthy per-photo timestamps.
-
 Input / output:
-  --input   READ-ONLY. Point at the extracted export root (dir containing
-            'your_facebook_activity'). Never written or renamed.
-  --output  receives enriched COPIES, one subfolder per album. Use --clean to wipe first.
+  --input   READ-ONLY. The extracted export root (dir containing your_facebook_activity).
+  --output  receives enriched COPIES, one subfolder per album. --clean wipes it first.
 
-Requirements: Python 3.9+, exiftool on PATH  (macOS: `brew install exiftool`).
+Options:
+  -i, --input DIR     (required) extracted export root, READ-ONLY
+  -o, --output DIR    destination for enriched copies (required unless --inspect)
+  --clean             wipe the output dir before running (fresh rebuild)
+  --inspect           print detected schema and exit (no writes)
+  --dry-run           print actions, copy/write nothing
+  --limit N           only process first N photos (0 = all)
+  --batch SUFFIX      batch suffix for the flat tag src_facebook_<SUFFIX> (default 2026_06)
+  --prefix P          album hierarchy parent letter (default "F"); albums tag as P/<name>
+  --source NAME       source name in the flat tag src_<NAME>_<batch> (default "facebook")
+  --exclude-album N   album name to skip (repeatable, case-insensitive); none by default
+  --verbose           print each exiftool command as it runs
 
-Examples:
+Requirements: Python 3.9+, exiftool on PATH (macOS: `brew install exiftool`).
+
+Usage:
     python3 tr_facebook_exif_encombinator.py --input /data/fb/_extracted --inspect
     python3 tr_facebook_exif_encombinator.py --input /data/fb/_extracted --output /data/out --dry-run --limit 5
     python3 tr_facebook_exif_encombinator.py --input /data/fb/_extracted --output /data/out --clean
+Then upload:
+    immich-go upload from-folder --server=... --api-key=... --folder-as-album FOLDER /data/out
 """
 
 import argparse
@@ -54,16 +64,15 @@ import sys
 from pathlib import Path
 
 # ----------------------------------------------------------------------------
-# Config
+# Config / defaults
 # ----------------------------------------------------------------------------
-SOURCE_TAG = "facebook"
-DEFAULT_IMPORT_TAG = "fb_2026_06"   # override per-run with --import-tag
+DEFAULT_SOURCE = "facebook"
+DEFAULT_BATCH = "2026_06"
+DEFAULT_PREFIX = "F"
 PROGRESS_EVERY = 100
 
 ALBUM_GLOBS = ["**/posts/album/*.json", "**/album/*.json"]
-
-# No albums excluded by default. Add names (case-insensitive) here or via --exclude-album.
-EXCLUDE_ALBUMS = set()
+EXCLUDE_ALBUMS = set()              # none by default; add via --exclude-album
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v"}
 TZ_OFFSET_HOURS = 0
@@ -111,8 +120,11 @@ def ts_to_date_prefix(ts):
     return dt.strftime("%Y_%m_%d")
 
 
-def sanitise_album(name, fallback):
-    name = fix_mojibake(name or "").strip()
+def clean_album_name(raw):
+    return fix_mojibake(raw or "").strip()
+
+
+def sanitise_folder(name, fallback):
     if not name:
         return fallback
     for ch in '/\\:*?"<>|':
@@ -121,13 +133,16 @@ def sanitise_album(name, fallback):
     return (name[:ALBUM_NAME_MAXLEN] or fallback)
 
 
-def album_folder_name(raw_name, from_ts, fallback):
-    """Date-prefixed, filesystem-safe album folder name, e.g.
-    '2010_03_17 - Hipstamatic Prints #1'. Undated albums get just the name."""
-    base = sanitise_album(raw_name, fallback)
+def album_folder_name(clean_name, from_ts, fallback):
+    base = sanitise_folder(clean_name, fallback)
     if from_ts:
         return f"{ts_to_date_prefix(from_ts)} - {base}"
     return base
+
+
+def album_tag_leaf(clean_name):
+    """Leaf for the hierarchical album tag. '/' is the hierarchy separator, so swap it."""
+    return (clean_name or "").replace("/", "-").strip()
 
 
 def gps_from(media):
@@ -141,8 +156,6 @@ def gps_from(media):
 
 
 def photo_timestamp(photo):
-    """Prefer the camera's original capture time; fall back to FB's post time. May be
-    None (then the album From-date fallback applies)."""
     exif = dig(photo, "media_metadata", "photo_metadata", "exif_data", default=None) or []
     taken = exif[0].get("taken_timestamp") if exif else None
     return taken or photo.get("creation_timestamp")
@@ -237,7 +250,7 @@ class Resolver:
 # ----------------------------------------------------------------------------
 # exiftool command
 # ----------------------------------------------------------------------------
-def build_exiftool_cmd(path, ts, lat, lon, description, import_tag):
+def build_exiftool_cmd(path, ts, lat, lon, description, src_tag, album_leaf, prefix):
     cmd = ["exiftool", "-m", "-overwrite_original", "-charset", "UTF8", "-codedcharacterset=utf8"]
     is_video = path.suffix.lower() in VIDEO_EXTS
 
@@ -259,8 +272,11 @@ def build_exiftool_cmd(path, ts, lat, lon, description, import_tag):
                     f"-XMP-dc:Description={description}",
                     f"-IPTC:Caption-Abstract={description}"]
 
-    for kw in (SOURCE_TAG, import_tag):
-        cmd += [f"-IPTC:Keywords+={kw}", f"-XMP-dc:Subject+={kw}"]
+    # Flat provenance tag.
+    cmd += [f"-IPTC:Keywords+={src_tag}", f"-XMP-dc:Subject+={src_tag}"]
+    # Hierarchical album tag: F/<album>.
+    if album_leaf:
+        cmd += [f"-XMP-digiKam:TagsList+={prefix}/{album_leaf}"]
 
     if lat is not None and lon is not None:
         cmd += [f"-GPSLatitude={abs(lat)}", f"-GPSLatitudeRef={'N' if lat >= 0 else 'S'}",
@@ -284,44 +300,45 @@ def find_albums(input_dir):
 
 
 def load_albums(album_files, exclude):
-    """Return (albums, excluded_names, parse_failures). Each album is
-    (folder_name, photos, from_ts); from_ts is the earliest per-photo timestamp."""
+    """Each album -> (folder_name, album_leaf, photos, from_ts)."""
     albums, excluded, failures = [], [], 0
     for af in album_files:
         data = load_json(af)
         if data is None:
             failures += 1
             continue
-        raw = (data.get("name") if isinstance(data, dict) else "") or ""
-        if exclude and fix_mojibake(raw).strip().lower() in exclude:
-            excluded.append(fix_mojibake(raw).strip())
+        clean = clean_album_name(data.get("name") if isinstance(data, dict) else "")
+        if exclude and clean.lower() in exclude:
+            excluded.append(clean)
             continue
         photos = data.get("photos") if isinstance(data, dict) else (data or [])
         tss = [t for t in (photo_timestamp(p) for p in photos) if t]
         from_ts = min(tss) if tss else None
-        folder = album_folder_name(raw, from_ts, af.stem)
-        albums.append((folder, photos, from_ts))
+        folder = album_folder_name(clean, from_ts, af.stem)
+        albums.append((folder, album_tag_leaf(clean), photos, from_ts))
     return albums, excluded, failures
 
 
 # ----------------------------------------------------------------------------
 # Inspect
 # ----------------------------------------------------------------------------
-def inspect(input_dir, album_files, exclude):
+def inspect(input_dir, album_files, exclude, src_tag, prefix):
     print(f"\nInput:              {input_dir}")
     print(f"Album JSONs found:  {len(album_files)}")
+    print(f"Tags per photo:     {src_tag}  +  {prefix}/<album>")
     albums, excluded, _ = load_albums(album_files, exclude)
     if excluded:
         print(f"Excluded albums:    {', '.join(excluded)}")
-    for folder, photos, _ in albums[:8]:
-        print(f"  - {folder}  ({len(photos)} photos)")
+    for folder, leaf, photos, _ in albums[:8]:
+        print(f"  - {folder}   [{prefix}/{leaf}]   ({len(photos)} photos)")
     if not albums:
         print("\n  No albums to process. Check ALBUM_GLOBS / --exclude-album.")
         return
 
     res = Resolver(input_dir)
-    folder, photos, from_ts = albums[0]
+    folder, leaf, photos, from_ts = albums[0]
     print(f"\nFirst album folder: {folder!r}")
+    print(f"album tag:          {prefix}/{leaf}")
     print(f"album From date:    {ts_to_exif(from_ts) if from_ts else '(none)'}")
     if photos:
         p0 = photos[0]
@@ -336,6 +353,7 @@ def inspect(input_dir, album_files, exclude):
         print(f"  timestamp:  {ts} -> {ts_to_exif(ts) if ts else '(none, would use album From)'}")
         print(f"  caption:    {cap!r}")
         print(f"  gps:        {lat}, {lon}")
+        print(f"  tags:       {src_tag}, {prefix}/{leaf}")
         print(f"  -> output:  <output>/{folder}/{Path(uri).name if uri else '?'}")
     print("\nIf that looks right, drop --inspect and run --dry-run --limit 5.\n")
 
@@ -345,7 +363,7 @@ def inspect(input_dir, album_files, exclude):
 # ----------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(
-        description="Embed Facebook album JSON metadata into photo copies, ready for Immich.")
+        description="Embed Facebook album JSON metadata + source/album tags into photo copies.")
     ap.add_argument("-i", "--input", required=True,
                     help="Extracted export root (READ-ONLY), the dir containing your_facebook_activity")
     ap.add_argument("-o", "--output",
@@ -354,13 +372,18 @@ def main():
     ap.add_argument("--inspect", action="store_true", help="Print detected schema and exit")
     ap.add_argument("--dry-run", action="store_true", help="Print actions, copy/write nothing")
     ap.add_argument("--limit", type=int, default=0, help="Only process first N photos (0 = all)")
-    ap.add_argument("--import-tag", default=DEFAULT_IMPORT_TAG,
-                    help=f"Dated batch tag (default {DEFAULT_IMPORT_TAG})")
+    ap.add_argument("--batch", default=DEFAULT_BATCH,
+                    help=f"Batch suffix for the flat source tag (default {DEFAULT_BATCH})")
+    ap.add_argument("--prefix", default=DEFAULT_PREFIX,
+                    help=f'Album hierarchy parent letter (default "{DEFAULT_PREFIX}")')
+    ap.add_argument("--source", default=DEFAULT_SOURCE,
+                    help=f'Source name in src_<source>_<batch> (default "{DEFAULT_SOURCE}")')
     ap.add_argument("--exclude-album", action="append", default=[],
-                    help="Album name to skip (repeatable; case-insensitive). None excluded by default.")
+                    help="Album name to skip (repeatable; case-insensitive). None by default.")
     ap.add_argument("--verbose", action="store_true", help="Print each command as it runs")
     args = ap.parse_args()
 
+    src_tag = f"src_{args.source}_{args.batch}"
     exclude = set(EXCLUDE_ALBUMS) | {a.strip().lower() for a in args.exclude_album}
 
     input_dir = Path(args.input).expanduser().resolve()
@@ -377,21 +400,22 @@ def main():
     album_files = find_albums(input_dir)
 
     if args.inspect:
-        inspect(input_dir, album_files, exclude)
+        inspect(input_dir, album_files, exclude, src_tag, args.prefix)
         return
 
     if not album_files:
         sys.exit("FATAL: no album JSONs found. Run --inspect and check ALBUM_GLOBS.")
 
     albums, excluded, failed = load_albums(album_files, exclude)
-    total = sum(len(p) for _, p, _ in albums)
+    total = sum(len(p) for _, _, p, _ in albums)
     display_total = min(args.limit, total) if args.limit else total
     msg = f"Found {total} photos across {len(albums)} albums"
     if excluded:
         msg += f" (excluded {len(excluded)}: {', '.join(excluded)})"
     if args.limit:
         msg += f" (processing first {display_total})"
-    print(msg + "\n")
+    print(msg)
+    print(f"Tags per photo: {src_tag} + {args.prefix}/<album>\n")
 
     if args.clean and not args.dry_run:
         safe_clean(output, input_dir)
@@ -399,7 +423,7 @@ def main():
     res = Resolver(input_dir)
     ok = skipped = renamed = fellback = processed = 0
     stop = False
-    for folder, photos, album_from in albums:
+    for folder, leaf, photos, album_from in albums:
         if stop:
             break
         for photo in photos:
@@ -425,7 +449,7 @@ def main():
                 dst, did_rename = corrected_ext(dst, src_file)
                 if not args.dry_run:
                     dst = unique_path(dst)
-                cmd = build_exiftool_cmd(dst, ts, lat, lon, cap, args.import_tag)
+                cmd = build_exiftool_cmd(dst, ts, lat, lon, cap, src_tag, leaf, args.prefix)
 
                 if args.dry_run or args.verbose:
                     flags = []
