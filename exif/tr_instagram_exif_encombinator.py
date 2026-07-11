@@ -1,50 +1,66 @@
 #!/usr/bin/env python3
 """
-instagram_exif_encombinator.py - Enrich an Instagram export with embedded metadata,
+tr_instagram_exif_encombinator.py - Enrich an Instagram export with embedded metadata,
 ready for Immich.
 
-Instagram strips EXIF on upload and keeps the real metadata (post dates, captions, GPS)
-in sidecar JSON. This reads the export's media-content JSON and writes that metadata
-INTO copies of the photos/videos with exiftool, so a downstream importer (e.g. immich-go
-`upload from-folder`) and Immich get correct dates, captions and source tags instead of
-a pile of dateless files all stamped with today's date.
+Instagram strips EXIF on upload and keeps the real metadata (post dates, captions, GPS) in
+sidecar JSON. This reads the export's media-content JSON and writes that metadata INTO
+copies of the photos/videos with exiftool, so immich-go `upload from-folder` and Immich get
+correct dates, captions and tags instead of dateless files stamped with today.
 
-Content covered (the files that actually reference media):
-    posts_*.json        your feed posts (sharded posts_1.json, posts_2.json, ...)
-    archived_posts.json archived posts
-    reels.json          reels (video)
-    igtv_videos.json    IGTV (video)
-Deliberately ignored: posts.json (a label/activity feed with no media), stories.json,
-profile_photos.json, reposts.json, other_content.json.
+Instagram has no albums, but it does separate media by CONTENT TYPE, which this preserves
+as a hierarchical tag (the rough equivalent of Facebook's per-album nesting):
 
-What it does (deliberately basic):
-  - caption (post or media title) -> description
-  - creation_timestamp            -> DateTimeOriginal / QuickTime CreateDate for video
-  - GPS                           -> if present in exif_data (often stripped by IG)
-  - tags                          -> instagram + a dated batch tag (default ig_2026_06)
+Tags written into each file (read by Immich on import):
+  - src_instagram_<batch>  flat provenance tag (default src_instagram_2026_06), so the
+                           batch is findable/cullable and the source is always knowable.
+  - I/<type>               hierarchical content-type tag, nested under an "I" parent, where
+                           <type> is one of: posts, archived, reels, igtv, stories.
+
+Content covered (the files that actually reference media), each mapped to its I/<type>:
+  posts_*.json        -> I/posts       (your feed posts; sharded posts_1.json, ...)
+  archived_posts.json -> I/archived
+  reels.json          -> I/reels       (video)
+  igtv_videos.json    -> I/igtv        (video)
+  stories.json        -> I/stories
+Deliberately ignored: posts.json (a label/activity feed with no media), profile_photos,
+reposts, other_content.
+
+Also:
+  - caption (post or media title) -> description.
+  - creation_timestamp -> DateTimeOriginal (photos) / QuickTime CreateDate (video).
+  - GPS if present in exif_data (often stripped by IG).
   - Carousels: a post's caption + timestamp are fanned out across all its media.
-  - Fixes Instagram's mislabelled files: media whose extension lies about the content
-    (e.g. a JPEG named .webp or .heic) is renamed in the OUTPUT to match the real bytes,
-    sniffed from magic numbers. Genuine WebP/HEIC/PNG files are left as-is.
-  - No albums   (Instagram has none; use your importer's "into album" option).
-  - No comments (Instagram's export does not include comment threads on your posts).
+  - Fixes mislabelled files: media whose extension lies about the content (e.g. a JPEG
+    named .webp/.heic) is renamed in the OUTPUT to the real format (magic-number sniff).
+  - No albums (Instagram has none; the importer puts everything in one named album).
+  - No comments (Instagram's export omits comment threads on your posts).
 
 Input / output:
-  --input   is treated as READ-ONLY. Nothing is ever written or renamed there.
+  --input   READ-ONLY. The folder containing the IG JSON export. Never written/renamed.
   --output  receives enriched COPIES, mirroring the source's media subfolder structure.
-            Use --clean to wipe it first for a guaranteed fresh rebuild.
+            --clean wipes it first.
 
-Requirements: Python 3.9+, exiftool on PATH  (macOS: `brew install exiftool`).
+Options:
+  -i, --input DIR     (required) source export dir, READ-ONLY
+  -o, --output DIR    destination for enriched copies (required unless --inspect)
+  --clean             wipe the output dir before running (fresh rebuild)
+  --inspect           print detected schema and exit (no writes)
+  --dry-run           print actions, copy/write nothing
+  --limit N           only process first N media (0 = all)
+  --batch SUFFIX      batch suffix for the flat tag src_instagram_<SUFFIX> (default 2026_06)
+  --prefix P          content-type hierarchy parent letter (default "I"); tags as P/<type>
+  --source NAME       source name in the flat tag src_<NAME>_<batch> (default "instagram")
+  --verbose           print each exiftool command as it runs
 
-Examples:
-    # Look at the export structure first (input only):
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --inspect
+Requirements: Python 3.9+, exiftool on PATH (macOS: `brew install exiftool`).
 
-    # Dry run a few items:
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --dry-run --limit 5
-
-    # Real run, wiping output first:
-    python3 instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --clean
+Usage:
+    python3 tr_instagram_exif_encombinator.py --input /data/ig_export/json --inspect
+    python3 tr_instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --dry-run --limit 5
+    python3 tr_instagram_exif_encombinator.py --input /data/ig_export/json --output /data/out --clean
+Then upload (Instagram has no albums, so use one named album):
+    immich-go upload from-folder --server=... --api-key=... --into-album "Instagram1" /data/out
 """
 
 import argparse
@@ -56,31 +72,31 @@ import sys
 from pathlib import Path
 
 # ----------------------------------------------------------------------------
-# Config
+# Config / defaults
 # ----------------------------------------------------------------------------
-SOURCE_TAG = "instagram"
-DEFAULT_IMPORT_TAG = "ig_2026_06"   # override per-run with --import-tag
-PROGRESS_EVERY = 100                # print a progress line every N media
+DEFAULT_SOURCE = "instagram"
+DEFAULT_BATCH = "2026_06"
+DEFAULT_PREFIX = "I"
+PROGRESS_EVERY = 100
 
-# Content files that reference real media, searched recursively under --input.
-# NOTE: "posts_*.json" matches the sharded post files (posts_1.json, ...) but NOT
-# "posts.json", which is a label/activity feed with no media and must be excluded.
-CONTENT_GLOBS = [
-    "**/posts_*.json",
-    "**/archived_posts.json",
-    "**/reels.json",
-    "**/igtv_videos.json",
+# Content files -> the I/<type> leaf they map to. "posts_*.json" matches the sharded post
+# files (posts_1.json, ...) but NOT "posts.json" (a label feed with no media).
+CONTENT_MAP = [
+    ("**/posts_*.json", "posts"),
+    ("**/archived_posts.json", "archived"),
+    ("**/reels.json", "reels"),
+    ("**/igtv_videos.json", "igtv"),
+    ("**/stories.json", "stories"),
 ]
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v"}
-TZ_OFFSET_HOURS = 0                 # IG epochs are UTC; DateTimeOriginal is tz-naive
+TZ_OFFSET_HOURS = 0
 
 
 # ----------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------
 def fix_mojibake(s):
-    """Meta exports UTF-8 as escaped Latin-1, garbling accents/emoji. Recover it."""
     if not isinstance(s, str):
         return s
     try:
@@ -113,8 +129,8 @@ def ts_to_exif(ts):
 
 
 def entries_from(data):
-    """The content files are either a bare list of items, or a dict wrapping one list
-    (reels/igtv/archived). Return the list of items either way."""
+    """Content files are either a bare list of items, or a dict wrapping one list
+    (reels/igtv/archived/stories). Return the list either way."""
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
@@ -135,8 +151,6 @@ def gps_from(media):
 
 
 def detect_export_root(input_dir):
-    """uris resolve relative to the export root (the dir holding 'media/'). Find it;
-    fall back to input_dir."""
     for d in input_dir.rglob("media"):
         if d.is_dir():
             return d.parent
@@ -144,11 +158,6 @@ def detect_export_root(input_dir):
 
 
 def real_image_ext(path):
-    """Sniff the true image format from magic bytes and return the matching extension
-    (e.g. '.jpg'), or None if unknown/not an image. Instagram frequently mislabels
-    JPEGs as .webp or .heic; exiftool refuses to write when the extension contradicts
-    the content, so we rename the output copy to match reality. Genuine formats return
-    their own extension (so no rename happens)."""
     try:
         with open(path, "rb") as f:
             head = f.read(16)
@@ -166,8 +175,6 @@ def real_image_ext(path):
 
 
 def corrected_output(dst_file, src_file):
-    """Return the output path with its extension corrected to the real format if the
-    name lies; otherwise the original dst_file. Returns (path, did_rename)."""
     real = real_image_ext(src_file)
     if real and dst_file.suffix.lower() != real:
         return dst_file.with_suffix(real), True
@@ -175,8 +182,6 @@ def corrected_output(dst_file, src_file):
 
 
 def safe_clean(output, input_dir):
-    """Wipe and recreate output, with guards so it can never delete the source or a
-    filesystem root."""
     out, inp = output.resolve(), input_dir.resolve()
     if out == inp:
         sys.exit("FATAL: --clean refused: output equals input.")
@@ -196,8 +201,7 @@ def safe_clean(output, input_dir):
 # ----------------------------------------------------------------------------
 # exiftool command
 # ----------------------------------------------------------------------------
-def build_exiftool_cmd(path, ts, lat, lon, description, import_tag):
-    # -m : ignore minor errors/warnings (belt-and-braces alongside the extension fix).
+def build_exiftool_cmd(path, ts, lat, lon, description, src_tag, type_leaf, prefix):
     cmd = ["exiftool", "-m", "-overwrite_original", "-charset", "UTF8", "-codedcharacterset=utf8"]
     is_video = path.suffix.lower() in VIDEO_EXTS
 
@@ -219,8 +223,11 @@ def build_exiftool_cmd(path, ts, lat, lon, description, import_tag):
                     f"-XMP-dc:Description={description}",
                     f"-IPTC:Caption-Abstract={description}"]
 
-    for kw in (SOURCE_TAG, import_tag):
-        cmd += [f"-IPTC:Keywords+={kw}", f"-XMP-dc:Subject+={kw}"]
+    # Flat provenance tag.
+    cmd += [f"-IPTC:Keywords+={src_tag}", f"-XMP-dc:Subject+={src_tag}"]
+    # Hierarchical content-type tag: I/<type>.
+    if type_leaf:
+        cmd += [f"-XMP-digiKam:TagsList+={prefix}/{type_leaf}"]
 
     if lat is not None and lon is not None:
         cmd += [f"-GPSLatitude={abs(lat)}", f"-GPSLatitudeRef={'N' if lat >= 0 else 'S'}",
@@ -231,43 +238,54 @@ def build_exiftool_cmd(path, ts, lat, lon, description, import_tag):
 
 
 # ----------------------------------------------------------------------------
-# Load + count
+# Discovery: collect content files with their type leaf
 # ----------------------------------------------------------------------------
+def find_content(input_dir):
+    """Return list of (path, type_leaf), deduped, for every matched content file."""
+    seen, found = set(), []
+    for glob, leaf in CONTENT_MAP:
+        for p in input_dir.glob(glob):
+            if p.is_file() and p not in seen:
+                seen.add(p)
+                found.append((p, leaf))
+    return sorted(found, key=lambda t: str(t[0]))
+
+
 def collect_entries(content_files):
-    """Pass 1: load every content file once, return (all_entries, parse_failures)."""
-    all_entries, failures = [], 0
-    for cf in content_files:
+    """Pass 1: load every content file once. Returns (entries, failures) where each entry
+    is (entry_dict, type_leaf) so the content type travels with the data."""
+    entries, failures = [], 0
+    for cf, leaf in content_files:
         data = load_json(cf)
         if data is None:
             failures += 1
             continue
-        all_entries.extend(entries_from(data))
-    return all_entries, failures
+        for e in entries_from(data):
+            entries.append((e, leaf))
+    return entries, failures
 
 
 # ----------------------------------------------------------------------------
 # Inspect
 # ----------------------------------------------------------------------------
-def inspect(input_dir, export_root, content_files):
+def inspect(input_dir, export_root, content_files, src_tag, prefix):
     print(f"\nInput:                {input_dir}")
     print(f"Detected export root: {export_root}")
+    print(f"Tags per photo:       {src_tag}  +  {prefix}/<type>")
     print(f"content files found:  {len(content_files)}")
-    for p in content_files:
-        print(f"  - {p.relative_to(input_dir)}")
+    for p, leaf in content_files:
+        print(f"  - {p.relative_to(input_dir)}   -> {prefix}/{leaf}")
     if not content_files:
-        print("\n  No content files matched CONTENT_GLOBS - check the patterns at the top.")
+        print("\n  No content files matched CONTENT_MAP - check the patterns at the top.")
         return
 
-    data = load_json(content_files[0])
-    entries = entries_from(data)
-    print(f"\nEntries in {content_files[0].name}: {len(entries)}")
+    cf, leaf = content_files[0]
+    entries = entries_from(load_json(cf))
+    print(f"\nEntries in {cf.name}: {len(entries)}  (type {prefix}/{leaf})")
     if entries:
         e0 = entries[0]
-        print(f"Entry keys: {sorted(e0.keys()) if isinstance(e0, dict) else type(e0)}")
         media = e0.get("media") or []
-        print(f"media[] count (carousel size): {len(media)}")
         if media:
-            print(f"media[0] keys: {sorted(media[0].keys())}")
             uri = media[0].get("uri")
             resolved = export_root / uri if uri else None
             cap = fix_mojibake(e0.get("title") or media[0].get("title") or "")
@@ -279,6 +297,7 @@ def inspect(input_dir, export_root, content_files):
             print(f"  timestamp:  {ts} -> {ts_to_exif(ts) if ts else '(none)'}")
             print(f"  caption:    {cap!r}")
             print(f"  gps:        {lat}, {lon}")
+            print(f"  tags:       {src_tag}, {prefix}/{leaf}")
     print("\nIf that looks right, drop --inspect and run --dry-run --limit 5.\n")
 
 
@@ -287,9 +306,9 @@ def inspect(input_dir, export_root, content_files):
 # ----------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(
-        description="Embed Instagram JSON metadata into photo/video copies, ready for Immich.")
+        description="Embed Instagram JSON metadata + source/type tags into photo copies.")
     ap.add_argument("-i", "--input", required=True,
-                    help="Source export dir (READ-ONLY). The folder containing the IG JSON export")
+                    help="Source export dir (READ-ONLY), the folder containing the IG JSON export")
     ap.add_argument("-o", "--output",
                     help="Destination dir for enriched copies (required unless --inspect)")
     ap.add_argument("--clean", action="store_true",
@@ -297,10 +316,16 @@ def main():
     ap.add_argument("--inspect", action="store_true", help="Print detected schema and exit")
     ap.add_argument("--dry-run", action="store_true", help="Print actions, copy/write nothing")
     ap.add_argument("--limit", type=int, default=0, help="Only process first N media (0 = all)")
-    ap.add_argument("--import-tag", default=DEFAULT_IMPORT_TAG,
-                    help=f"Dated batch tag (default {DEFAULT_IMPORT_TAG})")
+    ap.add_argument("--batch", default=DEFAULT_BATCH,
+                    help=f"Batch suffix for the flat source tag (default {DEFAULT_BATCH})")
+    ap.add_argument("--prefix", default=DEFAULT_PREFIX,
+                    help=f'Content-type hierarchy parent letter (default "{DEFAULT_PREFIX}")')
+    ap.add_argument("--source", default=DEFAULT_SOURCE,
+                    help=f'Source name in src_<source>_<batch> (default "{DEFAULT_SOURCE}")')
     ap.add_argument("--verbose", action="store_true", help="Print each command as it runs")
     args = ap.parse_args()
+
+    src_tag = f"src_{args.source}_{args.batch}"
 
     input_dir = Path(args.input).expanduser().resolve()
     if not input_dir.is_dir():
@@ -314,36 +339,28 @@ def main():
         sys.exit("FATAL: exiftool not found on PATH. Install with: brew install exiftool")
 
     export_root = detect_export_root(input_dir)
-
-    seen, content_files = set(), []
-    for g in CONTENT_GLOBS:
-        for p in input_dir.glob(g):
-            if p.is_file() and p not in seen:
-                seen.add(p)
-                content_files.append(p)
-    content_files.sort()
+    content_files = find_content(input_dir)
 
     if args.inspect:
-        inspect(input_dir, export_root, content_files)
+        inspect(input_dir, export_root, content_files, src_tag, args.prefix)
         return
 
     if not content_files:
-        sys.exit("FATAL: no content files found. Run --inspect and check CONTENT_GLOBS.")
+        sys.exit("FATAL: no content files found. Run --inspect and check CONTENT_MAP.")
 
-    # Pass 1: load content and count total media for the progress readout.
-    all_entries, failed = collect_entries(content_files)
-    total_media = sum(len(e.get("media") or []) for e in all_entries)
+    entries, failed = collect_entries(content_files)
+    total_media = sum(len(e.get("media") or []) for e, _ in entries)
     display_total = min(args.limit, total_media) if args.limit else total_media
-    print(f"Found {total_media} media across {len(all_entries)} entries "
+    print(f"Found {total_media} media across {len(entries)} entries "
           f"in {len(content_files)} content files"
-          + (f" (processing first {display_total})" if args.limit else "") + "\n")
+          + (f" (processing first {display_total})" if args.limit else ""))
+    print(f"Tags per photo: {src_tag} + {args.prefix}/<type>\n")
 
     if args.clean and not args.dry_run:
         safe_clean(output, input_dir)
 
-    # Pass 2: copy + enrich.
     ok = skipped = renamed = processed = 0
-    for entry in all_entries:
+    for entry, leaf in entries:
         caption = fix_mojibake(entry.get("title") or "")
         entry_ts = entry.get("creation_timestamp")
 
@@ -365,15 +382,13 @@ def main():
                     cap = caption or fix_mojibake(m.get("title") or "")
                     lat, lon = gps_from(m)
 
-                    # Correct the output extension if IG mislabelled the file (e.g. a
-                    # JPEG named .webp/.heic). Sniffed from SOURCE bytes so dry-run works.
                     dst_file = output / uri
                     final_dst, did_rename = corrected_output(dst_file, src_file)
-                    cmd = build_exiftool_cmd(final_dst, ts, lat, lon, cap, args.import_tag)
+                    cmd = build_exiftool_cmd(final_dst, ts, lat, lon, cap, src_tag, leaf, args.prefix)
 
                     if args.dry_run or args.verbose:
                         tag = f"  (rename -> {final_dst.suffix})" if did_rename else ""
-                        print(f"  copy {uri} -> {final_dst.name}{tag}")
+                        print(f"  [{args.prefix}/{leaf}] {uri} -> {final_dst.name}{tag}")
                         print("    " + " ".join(repr(a) if (" " in a or "\n" in a) else a for a in cmd))
 
                     if args.dry_run:
@@ -400,18 +415,19 @@ def main():
             print("\n(reached --limit)")
             break
 
-    _summary(output, ok, skipped, failed, renamed)
+    _summary(output, ok, skipped, failed, renamed, src_tag)
     if failed:
         sys.exit(1)
 
 
-def _summary(output, ok, skipped, failed, renamed):
-    print(f"\n{'='*48}")
+def _summary(output, ok, skipped, failed, renamed, src_tag):
+    print(f"\n{'='*52}")
     print(f"Done.  written/ok: {ok}   skipped: {skipped}   failed: {failed}   "
           f"renamed to real ext: {renamed}")
-    print(f"{'='*48}")
+    print(f"       flat tag: {src_tag}   (+ per-type I/<type> tags)")
+    print(f"{'='*52}")
     print("Next:  immich-go upload from-folder --server=... --api-key=... "
-          f'--into-album "Instagram"  {output}')
+          f'--into-album "Instagram1"  {output}')
 
 
 if __name__ == "__main__":
