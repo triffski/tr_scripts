@@ -3,10 +3,11 @@
 Somewhere to store random scripts, batch files and whatnot.
 
 # Scripts & Batch Files
-A couple of Python scripts for managing photos and metadata exported from Google and Meta platforms, for trasnfer to to Immich. Also a few time saver scripts for managing an Immich library.
+A couple of Python scripts for managing photos and metadata exported from Google and Meta platforms, for trasnfer to to Immich. Scripts for managing an Immich library via its API live in [`immich`](../immich).
 
 |Name|Description|
 |----|-----------|
+| `tr_flickr_export_organiser.py` | Organises a Flickr export into date-prefixed album folders and writes XMP sidecars (provenance + album tags, descriptions, faves/views/comments). The original image files are only moved, never edited. |
 | `tr_instagram_exif_encombinator.py`  | Instaram to Immich photo helper. Instagram strips EXIF on upload and keeps the real metadata (post dates, captions, GPS) in sidecar JSON. This reads `content/posts_*.json` and writes that metadata back into your downloaded photos with exiftool. <br><br>Grab your data in JSON format and make sure the script can access exiftool. Use `--dry-run` for one of those. |
 | `tr_facebook_exif_encombinator.py` | Similar to the Instagram script, this embeds dates, captions, GPS and `source`/`batch` tags into copies via exiftool, retains folders and fixes mislabelled-extension files (JPEGs named .webp etc). |
 
@@ -84,3 +85,24 @@ cd /path/to/scripts
 - The album line — this is the one that differs:  
     - Facebook → `--folder-as-album FOLDER` (one Immich album per date-prefixed folder, as above).  
     - Instagram → `--into-album "Instagram"`
+
+## Flickr Export Organiser
+
+Different route to the above - no exiftool, no immich-go. Flickr exports keep EXIF intact, so the originals are left alone and everything else goes into XMP sidecars.
+
+  - **Folders:** moves each image into `YYYY_MM_DD - Album Name` (earliest `date_taken` in the album), joined on the Flickr photo id in the filename.
+  - **No-album fallback:** files with no album and no photo JSON get grouped by a trailing `-DDMMYY` date in the filename. Anything un-parseable goes to `_ungrouped`.
+  - **Sidecar tags:** `src_flickr_2026_06` on every asset, `flickr/<Album Name>` on grouped ones, plus the photo's own Flickr tags.
+  - **Sidecar description:** Flickr description + a faves/views/comments summary line.
+  - **Full archive:** faves, views, comment threads and photopage URL kept in a custom `flickr:*` namespace - preserved, not displayed by Immich.
+  - **Dry run by default**, `--yes` to apply. `--dest` to organise somewhere other than in place.
+
+Requires a Flickr export (images + JSON metadata dump). Standard library only.
+
+```
+python3 tr_flickr_export_organiser.py \
+    --images /data/flickr_export \
+    --json   /data/flickr_export/json --yes
+```
+
+After running: point an Immich external library at the organised tree and rescan (picks up the sidecars), then use a folder-to-album tool such as Salvoxia's immich-folder-album-creator to turn the folders into albums.
