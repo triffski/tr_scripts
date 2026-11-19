@@ -30,6 +30,6 @@ No install/dependencies - open the link or download  the `.html` to your phone. 
   - Check whether to exfil a manual/recipe/item or if you can safely give it to a teammate.
 - **Search:** instantly search most loot, recipes, manuals and upgrades.
 
-Export/Import to back up or move between devices. Level-based rewards are checked automatically based your FOB upgrades, enter the rest as you get them (quite satisfying...). 
+Export/Import to back up or move between devices. Level-based rewards are checked automatically based on your progress, enter the rest as you unlock them (quite satisfying...). 
 
 Data is community-sourced (DMZ Codex, CODCentral, Activision...), some costs/locations are unconfirmed.
