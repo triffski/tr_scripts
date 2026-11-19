@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MW4 DMZ Progress Tool</title>
+<title>MW4 DMZ Quartermaster</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2314171c'/%3E%3Cpath d='M11 39 53 59M53 39 11 59' stroke='%23e8c547' stroke-width='6.5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='25' r='16' fill='%23f2f2f2'/%3E%3Crect x='23' y='33' width='18' height='11' rx='3' fill='%23f2f2f2'/%3E%3Ccircle cx='25.5' cy='25' r='4.8' fill='%2314171c'/%3E%3Ccircle cx='38.5' cy='25' r='4.8' fill='%2314171c'/%3E%3Cpath d='M32 30l-2.6 4.5h5.2z' fill='%2314171c'/%3E%3Cpath d='M28 38.5v4M32 38.5v4M36 38.5v4' stroke='%2314171c' stroke-width='1.8'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#0f1114">
 <style>
@@ -209,7 +209,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 <div class="wrap">
   <header>
     <div class="title">
-      <h1>MW4 DMZ <span>Progress Tool</span></h1>
+      <h1>MW4 DMZ <span>Quartermaster</span></h1>
       <div class="tabs"><button id="tFob">FOB</button><button id="tCraft">Crafting</button><button id="tStash" class="on">Loot</button></div>
     </div>
     <div class="search"><input id="q" type="search" placeholder="Search loot, recipes, upgrades…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear">×</button>
@@ -1242,12 +1242,19 @@ $("#copyBtn").addEventListener("click",async()=>{
   const c=makeCode();$("#code").value=c;$("#code").select();
   try{await navigator.clipboard.writeText(c);codeMsg("Copied");}catch(e){codeMsg("Selected");}
 });
-$("#saveBtn").addEventListener("click",()=>{
+// Inside the Claude artifact viewer, saving goes through its downloads capability; elsewhere a plain download.
+let dlNS=null;try{if(window.claude&&typeof claude.use==="function") claude.use("downloads").then(n=>{dlNS=n;}).catch(()=>{});}catch(e){}
+$("#saveBtn").addEventListener("click",async()=>{
   const c=makeCode();$("#code").value=c;
+  const d=new Date(),fn=`mw4-dmz-progress-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.txt`;
+  if(dlNS){
+    try{await dlNS.save({filename:fn,data:c+"\n"});codeMsg("Saved");}
+    catch(e){codeMsg(e&&e.code==="declined"?"Not saved":"Couldn't save here");}
+    return;
+  }
   try{
-    const d=new Date(),ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     const url=URL.createObjectURL(new Blob([c+"\n"],{type:"text/plain"}));
-    const a=document.createElement("a");a.href=url;a.download=`mw4-dmz-progress-${ds}.txt`;document.body.appendChild(a);a.click();a.remove();
+    const a=document.createElement("a");a.href=url;a.download=fn;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),2000);codeMsg("Saved");
   }catch(e){codeMsg("Couldn't save here");}
 });

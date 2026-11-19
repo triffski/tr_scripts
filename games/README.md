@@ -2,9 +2,9 @@
 
 Single-file web tools for games. No install, no dependencies - open the `.html` in a browser.
 
-## MW4 DMZ Progress Tool
+## MW4 DMZ Quartermaster
 
-**`mw4-dmz-progress-tool.html`** - MW4 DMZ stash and FOB advisor, built for phones.
+**`mw4-dmz-quartermaster.html`** - MW4 DMZ stash and FOB advisor, built for phones.
 
 - **FOB:** tick off upgrade tiers; shows what's left, remaining cost and a suggested next upgrade.
 - **Loot:** every ingredient, valuable, repair part and key, rated FOB / Scarce / Crafting / Repair / Keys / Sell against the tiers you haven't done, with keep counts, where to find it (grid refs coloured by threat) and what it's used in.
