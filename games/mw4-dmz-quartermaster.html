@@ -888,7 +888,7 @@ function renderManuals(){
   for(const w of rows){
     if(w.c!==last){html+=`<div class="cat-h">${WPLURAL[w.c]}<b>${got[w.c]||0}/${cnt[w.c]}</b></div>`;last=w.c;}
     const L=manualHave(w);
-    html+=`<div class="up craft${L?" learnt":""}" data-manual="${esc(w.n)}"><div class="craft-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div class="meta"><div class="nm">${esc(w.n)}</div><div class="sub">${w.m?"":"No manual needed · "}${w.p?`Gunsmith $${w.p.toLocaleString("en-GB")}`:"Gunsmith $??"}</div></div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
+    html+=`<div class="up craft${L?" learnt":""}" data-manual="${esc(w.n)}"><div class="craft-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div class="meta"><div class="nm">${esc(w.n)}</div>${(()=>{const t=[w.m?"":"No manual needed",w.p?`Gunsmith $${w.p.toLocaleString("en-GB")}`:""].filter(Boolean).join(" · ");return t?`<div class="sub">${t}</div>`:"";})()}</div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
   }
   $("#craftList").innerHTML=html||`<div class="empty">None.</div>`;
 }
@@ -975,7 +975,7 @@ function renderFob(){
   const sg=suggestNext();
   const costTxt=`${unknownCash?"~":""}${cash>=1e6?`$${Math.round(cash/1e5)/10}M`:`$${Math.round(cash/1000)}k`}`;
   $("#summary").innerHTML=`<div class="sbox"><small>Completed:</small><b>${tiersTotal-tiersLeft} / ${tiersTotal}</b><small>Remaining cost:</small><b>${costTxt}</b></div>
-    ${sg?`<button class="sbox sugg" title="${esc(upDesc(sg.u,sg.t))}" data-goup="${sg.u.id}" data-gotier="${sg.t.idx}"><small>Suggested upgrade:</small><b>${esc(sg.u.name)}${sg.u.tiers.length>1?" "+esc(sg.t.label):""}</b><span>${esc(sg.why)}</span><i class="info" data-tip="1" aria-label="Details">i</i><div class="stip hide">${esc(upDesc(sg.u,sg.t))}</div></button>`:""}`;
+    ${sg?`<button class="sbox sugg" title="${esc(upDesc(sg.u,sg.t))}" data-goup="${sg.u.id}" data-gotier="${sg.t.idx}"><small>Suggested next upgrade:</small><b>${esc(sg.u.name)}${sg.u.tiers.length>1?" "+esc(sg.t.label):""}</b><span>${esc(sg.why)}</span><i class="info" data-tip="1" aria-label="Details">i</i><div class="stip hide">${esc(upDesc(sg.u,sg.t))}</div></button>`:""}`;
   let html="",lastStation=null;
   for(const u of UPGRADES){
     if(u.station!==lastStation){html+=`<div class="station">${esc(u.station)}</div>`;lastStation=u.station;}
@@ -1044,12 +1044,37 @@ function navPush(){if(restoring) return;navStack.push({tab:cur,y:window.scrollY,
 function updBack(){const b=document.getElementById("backBtn");if(b)b.classList.toggle("hide",!navStack.length);}
 function goBack(){const st=navStack.pop();updBack();if(!st) return;restoring=true;
   tab(st.tab,true);window.scrollTo(0,st.y);if(st.sheet) openSheet(st.sheet);else closeSheet();restoring=false;}
+function sheetHTML(key){
+  if(key.startsWith("r:")){const r=RECIPES.find(x=>x.name===key.slice(2));return r?recipeHTML(r):null;}
+  if(key.startsWith("m:")){const w=MANUALS.find(x=>x.n===key.slice(2));return w?manualHTML(w):null;}
+  return ITEMS[key]?detailHTML(ITEMS[key],false):null;
+}
+const LEARN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function recipeHTML(r){
+  const L=isLearned(r),auto=autoLearned(r),makes=ITEMS[r.name];
+  const tile=makes?`<span class="ico" style="--rc:${rcol(makes)}">${svg(makes.icon)}</span>`:`<span class="ico" style="--rc:${recipeCol(r)}">${svg(recipeIcon(r))}</span>`;
+  const chips=r.inputs.map(i=>{const it=ITEMS[i.n];
+    return it?`<button class="ichip" style="--rc:${rcol(it)}" data-item="${esc(i.n)}"><span class="mi">${svg(it.icon)}</span><b>${i.q}</b> ${esc(i.n)}</button>`
+      :`<span class="ichip" style="--rc:var(--r-n)"><span class="mi rsc">${svg(RES_ICON[i.n])}</span><b>${i.q}</b> ${esc(i.n)}</span>`;}).join("");
+  return `<div class="sh-h">${tile}<div style="flex:1;min-width:0"><h2>${esc(r.name)}</h2><div class="sub">${[RECIPE_RAR[r.name]?RAR[RECIPE_RAR[r.name]][0]:"",rCat(r),"3D Printer"].filter(Boolean).join(" · ")}</div></div><button class="learn${L?" on":""}" data-learn="${esc(r.name)}"${auto?" disabled":""} aria-label="Learned">${LEARN_SVG}</button></div>
+    <div class="verdict" style="--c:var(${L?"--sell":"--print"})"><div class="vt">${L?"LEARNED":"NOT LEARNED"}</div><div class="kreq">Unlock: ${esc(r.unlock)}</div></div>
+    <div class="sh-sec"><h3>Needs</h3><div class="need">${chips}</div></div>
+    ${r.unlock==="Find in game"?`<div class="sh-sec"><h3>Recipe loot</h3><div class="tnote">${esc(RECIPE_CONT[r.name]||"Filing cabinets, chemical storage, weapons lockers")}</div></div>`:""}
+    ${makes?`<div class="sh-sec"><button class="reclink" data-item="${esc(r.name)}">${esc(r.name)} as loot</button></div>`:""}
+    <a class="codex" href="${codexRecipe(r)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(r.name)} on DMZ Codex</span></a>`;
+}
+function manualHTML(w){
+  const L=manualHave(w);
+  return `<div class="sh-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div style="flex:1;min-width:0"><h2>${esc(w.n)}</h2><div class="sub">${WCLASS[w.c][0]} · Gunsmith</div></div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned">${LEARN_SVG}</button></div>
+    <div class="verdict" style="--c:var(${L?"--sell":"--print"})"><div class="vt">${w.m?(L?"LEARNED":"NOT LEARNED"):"NO MANUAL NEEDED"}</div>${w.p?`<div class="kreq">Gunsmith $${w.p.toLocaleString("en-GB")}</div>`:""}</div>`;
+}
+function refreshSheet(){if(!sheetItem) return;const h=sheetHTML(sheetItem);if(h) $("#sheet").innerHTML=`<div class="grab"></div>`+h;}
 function openSheet(name){
-  const it=ITEMS[name]; if(!it) return;
+  const h=sheetHTML(name); if(h==null) return;
   if(sheetItem!==name) navPush();
   sheetItem=name;
   hideTip();
-  $("#sheet").innerHTML=`<div class="grab"></div>`+detailHTML(it,false);
+  $("#sheet").innerHTML=`<div class="grab"></div>`+h;
   $("#sheet").scrollTop=0;
   $("#sheet").classList.add("on");$("#scrim").classList.add("on");
 }
@@ -1093,9 +1118,9 @@ document.addEventListener("click",e=>{
     save();renderFob();renderStash();renderCraft();return;
   }
   const lb=e.target.closest("[data-learn]");
-  if(lb){if(lb.disabled)return;const n=lb.dataset.learn;if(learned.has(n)) learned.delete(n);else{learned.add(n);const L=lvlReq(RECIPES.find(r=>r.name===n));if(L) for(const r of RECIPES) if(r.name!==n&&lvlReq(r)===L) learned.delete(r.name);}saveL();renderCraft();refreshCode();return;}
+  if(lb){if(lb.disabled)return;const n=lb.dataset.learn;if(learned.has(n)) learned.delete(n);else{learned.add(n);const L=lvlReq(RECIPES.find(r=>r.name===n));if(L) for(const r of RECIPES) if(r.name!==n&&lvlReq(r)===L) learned.delete(r.name);}saveL();renderCraft();refreshSheet();refreshCode();return;}
   const mb=e.target.closest("[data-man]");
-  if(mb){if(mb.disabled)return;const n=mb.dataset.man;manuals.has(n)?manuals.delete(n):manuals.add(n);saveM();renderCraft();refreshCode();return;}
+  if(mb){if(mb.disabled)return;const n=mb.dataset.man;manuals.has(n)?manuals.delete(n):manuals.add(n);saveM();renderCraft();refreshSheet();refreshCode();return;}
   const cv=e.target.closest("[data-cv]");
   if(cv){if(craftView!==cv.dataset.cv){craftView=cv.dataset.cv;craftFilter="all";craftCat="";renderCraft();}return;}
   const cc=e.target.closest("[data-cc]");
@@ -1150,7 +1175,7 @@ function onSearch(e){
   const raw=$("#q").value;
   $("#clr").style.display=raw?"block":"none";
   clearTimeout(autoTimer);
-  if(cur==="craft"){$("#results").classList.add("hide");results=[];renderCraft();return;}
+  if(cur==="craft") renderCraft();
   results=searchAll(raw);sel=0;
   const box=$("#results");
   if(!raw.trim()){box.classList.add("hide");return;}
@@ -1173,13 +1198,15 @@ function go(r,auto){
     if(filter!=="all"&&assess(r.it).v!==filter){filter="all";renderStash();}
     tab("loot",true);
     flashEl([...document.querySelectorAll("#list [data-item]")].find(e=>e.dataset.item===r.name));
+    if(!auto) openSheet(r.name);
   }else if(r.kind==="manual"){
-    craftView="manuals";craftFilter="all";renderCraft();tab("craft",true);
+    craftView="manuals";craftFilter="all";craftCat="";tab("craft",true);
     flashEl([...document.querySelectorAll("#craftList [data-manual]")].find(e=>e.dataset.manual===r.name));
+    if(!auto) openSheet("m:"+r.name);
   }else if(r.kind==="recipe"){
-    if(craftView!=="recipes"||craftFilter!=="all"){craftView="recipes";craftFilter="all";renderCraft();}
-    tab("craft",true);
+    craftView="recipes";craftFilter="all";craftCat="";tab("craft",true);
     flashEl([...document.querySelectorAll("#craftList [data-recipe]")].find(e=>e.dataset.recipe===r.name));
+    if(!auto) openSheet("r:"+r.name);
   }else{
     tab("fob",true);
     flashEl(document.querySelector(`#tree [data-upid="${r.u.id}"]`));
