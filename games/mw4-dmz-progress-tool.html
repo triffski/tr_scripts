@@ -196,6 +196,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .cat-h{display:flex;align-items:baseline;gap:6px;margin:14px 4px 6px;font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
 .cat-h b{font-weight:600;letter-spacing:0;color:#5d6570}
 #craftList .cat-h:first-child{margin-top:8px}
+.kreq{font-size:14px;font-weight:600;margin:3px 0 1px;color:var(--text)}
 .hide{display:none!important}
 </style>
 </head>
@@ -717,7 +718,7 @@ function canPrintNow(it){
   const u=UPGRADES.find(x=>x.id===p.up); return nDone(u)>=1;
 }
 function assess(it){
-  if(it.type==="Key"){const k=KEYINFO[it.name]||{};return {v:"key",remaining:0,next:0,keepTxt:k.needs?"Needs something first":"Works on its own",slotTxt:"",reason:k.needs?[k.needs]:[]};}
+  if(it.type==="Key"){const k=KEYINFO[it.name]||{};return {v:"key",remaining:0,next:0,keepTxt:"",slotTxt:"",reason:[],req:k.needs||null};}
   if(it.type==="Repair") return {v:"repair",remaining:0,next:0,keepTxt:"Keep a few",slotTxt:"",reason:["Vehicle repair part"]};
   let remaining=0,next=0,unverified=0;
   for(const x of it.ups){
@@ -830,7 +831,7 @@ function itemRow(it,a,m){
   if(!used.length) used.push(it.type==="Valuable"?"Cash only":it.type==="Repair"?"Repair part":"No known use");
   if(it.type==="Key"){used.length=0;used.push(KEYINFO[it.name].area);}
   const sub=[rname(it),it.val?`$${it.val.toLocaleString("en-GB")}`:(it.type==="Key"?"":"$??"),used.join(", ")].filter(Boolean).join(" · ");
-  const q=a.v==="hold"&&a.keepTxt.startsWith("Sell")?"sell or 1 stack":a.v==="keep"?`${a.remaining}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}`:a.v==="hold"?(a.keepTxt.includes("stack")?"1 stack":"a few"):a.v==="sell"?"sell all":a.v==="repair"?"keep a few":a.v==="key"?(KEYINFO[it.name]&&KEYINFO[it.name].needs?`<span class="needs">needs extra</span>`:""):"as needed";
+  const q=a.v==="hold"&&a.keepTxt.startsWith("Sell")?"sell or 1 stack":a.v==="keep"?`${a.remaining}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}`:a.v==="hold"?(a.keepTxt.includes("stack")?"1 stack":"a few"):a.v==="sell"?"sell all":a.v==="repair"?"keep a few":a.v==="key"?(KEYINFO[it.name]&&KEYINFO[it.name].needs?`<span class="needs">requirements</span>`:""):"as needed";
   return `<button class="item" style="--c:var(${VERDICT[a.v].c});--rc:${rcol(it)}" data-item="${esc(it.name)}">
     <span class="ico">${svg(it.icon)}</span>
     <span class="meta"><div class="nm">${hlName(it,m)}</div><div class="sub">${sub}</div></span>
@@ -992,7 +993,7 @@ function detailHTML(it,compact){
   const a=assess(it),V=VERDICT[a.v];
   let h=`<div class="sh-h" style="--rc:${rcol(it)}"><span class="ico">${svg(it.icon)}</span><div>
     <h2>${esc(it.name)}</h2><div class="sub">${it.type==="Key"?["Key",it.rar?rname(it):""].filter(Boolean).join(" · "):[it.type,it.rar?rname(it):"",it.val?`$${it.val.toLocaleString("en-GB")}`:"$??",it.stack?`stack ${it.stack}`:""].filter(Boolean).join(" · ")}</div></div></div>
-    <div class="verdict" style="--c:var(${V.c})"><div class="vt">${V.name.toUpperCase()}</div><div class="keep">${a.keepTxt}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}</div>${a.reason.length?`<ul>${a.reason.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:""}</div>`;
+    <div class="verdict" style="--c:var(${V.c})"><div class="vt">${V.name.toUpperCase()}</div>${a.v==="key"?`<div class="kreq">Requirements: ${a.req?`<span class="needs">${esc(a.req)}</span>`:"None"}</div>`:`<div class="keep">${a.keepTxt}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}</div>`}${a.reason.length?`<ul>${a.reason.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:""}</div>`;
   const hasG=w=>Array.isArray(w)?!!w[1]:w.at.some(x=>x[1]);
   const wh=WHERE[it.name]&&[...WHERE[it.name].filter(hasG),...WHERE[it.name].filter(w=>!hasG(w))];
   h+=`<div class="sh-sec"><h3>${it.type==="Key"?"Opens":"Where to find"}</h3>${CONTAINERS[it.name]?`<div class="cont">${esc(CONTAINERS[it.name])}</div>`:""}${wh?`<ul class="where">${wh.map(w=>Array.isArray(w)?`<li>${pill(w[1],w[2])}${esc(w[0])}</li>`:w.at.every(x=>!x[0])?`<li>${w.at.map(x=>pill(x[1],x[2])).join("")}${esc(w.t)}</li>`:`<li>${esc(w.t)}<div class="spots">${w.at.map(([n,g,th])=>`<span class="spot">${pill(g,th)}${esc(n)}</span>`).join("")}</div></li>`).join("")}</ul>`:`<div class="tnote">Not documented yet</div>`}</div>`;
@@ -1134,7 +1135,7 @@ function resHTML(r,i){
   if(r.kind==="recipe") return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:${recipeCol(r.r)}">${svg(recipeIcon(r.r))}</span><span class="meta"><div class="nm">${esc(r.name)}</div><div class="sub">Recipe · ${RECIPE_RAR[r.name]?RAR[RECIPE_RAR[r.name]][0]+" · ":""}${esc(r.r.unlock)}</div></span>${isLearned(r.r)?`<span class="kind" style="background:var(--sell);color:#111">LEARNED</span>`:`<span class="kind" style="background:var(--print);color:#111">NEW</span>`}</button>`;
   return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:var(--keep)">${svg("cube")}</span><span class="meta"><div class="nm">${esc(r.name)}</div><div class="sub">FOB · ${nDone(r.u)} / ${r.u.tiers.length} done</div></span><span class="kind">FOB</span></button>`;
 }
-function onSearch(){
+function onSearch(e){
   const raw=$("#q").value;
   $("#clr").style.display=raw?"block":"none";
   clearTimeout(autoTimer);
@@ -1145,7 +1146,7 @@ function onSearch(){
   if(!results.length){box.innerHTML=`<div class="res-n">No match.</div>`;box.classList.remove("hide");return;}
   box.innerHTML=(results.length>1?`<div class="res-n">${results.length} matches</div>`:"")+results.slice(0,30).map(resHTML).join("");
   box.classList.remove("hide");
-  if(results.length===1) autoTimer=setTimeout(()=>go(results[0]),650);
+  if(results.length===1&&e&&e.type==="input") autoTimer=setTimeout(()=>go(results[0],true),650);
 }
 function flashEl(el){
   if(!el) return;
@@ -1154,9 +1155,9 @@ function flashEl(el){
   window.scrollTo({top:Math.max(0,top),behavior:"smooth"});
   el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");
 }
-function go(r){
+function go(r,auto){
   clearTimeout(autoTimer);navPush();
-  $("#results").classList.add("hide");$("#q").blur();
+  $("#results").classList.add("hide");if(!auto) $("#q").blur();
   if(r.kind==="item"){
     if(filter!=="all"&&assess(r.it).v!==filter){filter="all";renderStash();}
     tab("loot",true);
