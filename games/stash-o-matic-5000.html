@@ -184,7 +184,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .learn:disabled{opacity:.55}
 .up.craft.learnt{box-shadow:inset 3px 0 0 var(--sell)}
 .lrn{color:var(--sell);font-weight:800;margin-left:5px}
-#craftChips{margin:10px 0 2px}
+#craftCats{margin:10px 0 0}#craftChips{margin:6px 0 2px}
 .seg{display:flex;background:var(--panel);border-radius:10px;padding:3px;gap:3px;margin:10px 0 0}
 .seg button{flex:1;padding:8px;border-radius:8px;font-weight:600;font-size:14px;color:var(--muted)}
 .seg button.on{background:var(--panel2);color:var(--text)}
@@ -209,6 +209,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 
   <section id="craftView" class="hide">
         <div class="seg" id="craftSeg"><button data-cv="recipes" class="on">Recipes</button><button data-cv="manuals">Manuals</button></div>
+        <div class="chips" id="craftCats"></div>
         <div class="chips" id="craftChips"></div>
         <div class="list" id="craftList"></div>
   </section>
@@ -332,7 +333,7 @@ const RECIPE_CONT={"Pain Killers":"Duffel, Medicine Cabinet, First Aid Kit, Chem
 ICONS.key='<circle cx="8" cy="15" r="4.5"/><path d="m11.2 11.8 8.8-8.8M17 6l2.5 2.5M14.5 8.5 16.5 10.5"/>';
 const KEYINFO={"Air Base Access Card":{"area":"Chang-san Air Base","needs":null},"Air Base Armory Card":{"area":"Chang-san Air Base","needs":"Made by upgrading an Air Base Access Card"},"Air Base DRC Weapons Locker":{"area":"Chang-san Air Base","needs":null},"Commandant Office":{"area":"Chang-san Air Base","needs":null},"Field Depot":{"area":"Chang-san Air Base","needs":null},"Weapons Mod Workshop":{"area":"Chang-san Air Base","needs":null},"Supreme Leader Access Card":{"area":"Chang-san Air Base","needs":null},"Counting Room Vault":{"area":"Heavenly Luck Casino","needs":null},"Jin-Tae's Private Lounge":{"area":"Heavenly Luck Casino","needs":"Restore casino power first"},"Vault Armory":{"area":"Heavenly Luck Casino","needs":null},"Train Depot Storageroom":{"area":"Cheongun Village","needs":null},"Mechanic's Shack":{"area":"Cheongun Village","needs":null},"Coin Mining Den Key":{"area":"NuriGO West","needs":null},"Jang-ui's Converted Power Room":{"area":"NuriGO Mall","needs":null},"Shopping DRC Locker":{"area":"NuriGO Mall","needs":"A core to open the gated side room"},"Downtown Branch Lobby Main":{"area":"The Grid","needs":null},"Hanex Guard Station":{"area":"The Grid","needs":null},"Executive Arms Auction":{"area":"The Grid","needs":null},"Netshin IT Room":{"area":"Netshin Tech Complex","needs":null},"Netshin Security Office":{"area":"Netshin Tech Complex","needs":null},"Roze's High-Rise Armory":{"area":"Netshin Tech Complex","needs":null},"Lucera Suite 703 Bedroom":{"area":"Hotel Lucera","needs":"Zipline up the main hall shaft"},"Gangbyeon Apartment B":{"area":"Compound Echo","needs":null},"Militia Arms Depot":{"area":"Compound Echo","needs":null},"Police Weapon Depository":{"area":"Wolves Stadium","needs":null},"Shop Records Room":{"area":"Wolves Stadium","needs":null},"Gas Station Electrical Room":{"area":"Construction Zone","needs":null},"Old Barber Shop":{"area":"Songdo Wharf","needs":null},"Gorani's Scout Overlook":{"area":"Imjin Farmland","needs":null},"Imjin Mill Foreman's Office":{"area":"Imjin Farmland","needs":null},"Mill Explosives Lab":{"area":"Imjin Farmland","needs":null},"Hoesik Supply Room":{"area":"Imjin Farmland","needs":null},"Haejeok Radio Station":{"area":"Imjin Suburb","needs":null},"Haksan School Armory":{"area":"Deadtown","needs":null},"Re-Education Center Annex":{"area":"Deadtown","needs":null},"Underground Propaganda Store Room":{"area":"Deadtown","needs":null},"Hospital Chemical Lab Key":{"area":"Mirae General Hospital","needs":"Lockers inside need separate keys"},"Hospital Chemical Lockers":{"area":"Mirae General Hospital","needs":"Hospital Chemical Lab Key to reach them"},"Mirae Electrical Room":{"area":"Mirae General Hospital","needs":null},"The Doctor's Command Office":{"area":"Mirae General Hospital","needs":null},"Iskra's Control Room":{"area":"Cheonwang Peak Array","needs":null},"Reactor 02 Control Room":{"area":"Haneul Nuclear Reactor","needs":null},"Reactor DRC Locker":{"area":"Haneul Nuclear Reactor","needs":"Radiation protection"},"Utility Maintenance Storage":{"area":"Haneul Nuclear Reactor","needs":null},"The Chemist's Secure Armory":{"area":"Haneul Nuclear Reactor","needs":"Radiation protection"},"Hazard Storehouse":{"area":"Haneul Nuclear Reactor","needs":null},"Kang's Arms Incinerator":{"area":"14th Political Prison","needs":null},"South Block Armory":{"area":"14th Political Prison","needs":null},"The Citadel East Wing":{"area":"14th Political Prison","needs":null},"The Citadel East Wing Office Key":{"area":"14th Political Prison","needs":null},"The Citadel Main Control Room":{"area":"14th Political Prison","needs":"East Wing terminal sequence first (The Citadel East Wing)"},"The Citadel Secondary Control Room":{"area":"14th Political Prison","needs":null},"The Citadel South Wing":{"area":"14th Political Prison","needs":"Inner cell keypad is separate"},"Prison Encampment Storage":{"area":"14th Political Prison","needs":null},"Archive Closet":{"area":"X01 Data Center","needs":null},"Audit Room":{"area":"X01 Main Warehouse","needs":null},"Superintendent's Office":{"area":"X01 Main Warehouse","needs":null},"Executive Room":{"area":"X01 Admin Offices","needs":null},"Maintenance Room":{"area":"X01 Production Assembly","needs":null},"Small Test Chamber":{"area":"X01 T.E.C.H. Lab","needs":"Get past the security checkpoints"},"Deep Vault 106":{"area":"X01 Deep Vault","needs":null},"Deep Vault 301":{"area":"X01 Deep Vault","needs":null},"Deep Vault 406":{"area":"X01 Deep Vault","needs":null},"X01 Vault DRC Locker Key":{"area":"X01 Deep Vault","needs":"Deep Vault access (a Deep Vault key)"},"Encodable Blank Keycard":{"area":"X01","needs":"Encode it at an X01 Encoder"},"Staff Emergency Exfil Keycard":{"area":"X01","needs":null},"Bank Branch Vault Access":{"area":"Bank branches","needs":null},"Gun Store Weapons Locker Key":{"area":"Gun stores","needs":null},"Black Market Weapons Locker Key":{"area":"Black market","needs":null},"Police Station Key":{"area":"Police stations","needs":null}};
 const MANUALS=[{"n":"Han 86","c":"AR","m":0,"p":6000},{"n":"M4","c":"AR","m":1,"p":6250},{"n":"Hyeon Burst","c":"AR","m":1,"p":5250},{"n":"Kastov 762","c":"AR","m":1,"p":null},{"n":"Patriot XMR","c":"AR","m":1,"p":6500},{"n":"Oden","c":"AR","m":1,"p":null},{"n":"Axion","c":"AR","m":1,"p":null},{"n":"Cronen Squall","c":"AR","m":1,"p":null},{"n":"PPSh-41","c":"SMG","m":0,"p":null},{"n":"ISO Nightshade","c":"SMG","m":1,"p":3000},{"n":"VEL 46","c":"SMG","m":1,"p":null},{"n":"WZ.55 Striga","c":"SMG","m":1,"p":null},{"n":"X-58 Nyx","c":"SMG","m":1,"p":null},{"n":"Rezi 12","c":"SG","m":1,"p":null},{"n":"Warlord","c":"SG","m":1,"p":null},{"n":"FiNN LMG","c":"LMG","m":1,"p":8000},{"n":"Type 73","c":"LMG","m":1,"p":null},{"n":"APOC-338","c":"LMG","m":1,"p":null},{"n":"MAR-9","c":"MR","m":1,"p":6500},{"n":"Oris 8.6","c":"MR","m":1,"p":7000},{"n":"Mosin-Nagant","c":"MR","m":1,"p":7500},{"n":"KG-7 Vulcan","c":"SR","m":1,"p":16000},{"n":"Astaroth .57","c":"SR","m":1,"p":null},{"n":"Signal .50","c":"SR","m":1,"p":14000},{"n":"Sang 9mm","c":"PI","m":0,"p":null},{"n":"Krait P68","c":"PI","m":1,"p":null},{"n":".50 GS","c":"PI","m":1,"p":null},{"n":"Mojave .357","c":"PI","m":1,"p":null},{"n":"FSS Carbon Edge 1095","c":"ML","m":1,"p":null}];
-const WCLASS={AR:["Assault Rifle","w_rifle"],SMG:["SMG","w_smg"],SG:["Shotgun","w_shotgun"],LMG:["LMG","w_lmg"],MR:["Marksman Rifle","w_sniper"],SR:["Sniper Rifle","w_sniper"],PI:["Pistol","w_pistol"],ML:["Melee","g_knife"]};
+const WCLASS={AR:["Assault Rifle","w_rifle","AR"],SMG:["SMG","w_smg"],SG:["Shotgun","w_shotgun"],LMG:["LMG","w_lmg"],MR:["Marksman Rifle","w_sniper","Marksman"],SR:["Sniper Rifle","w_sniper","Sniper"],PI:["Pistol","w_pistol"],ML:["Melee","g_knife"]};
 ICONS.w_rifle='<path d="M2 11h13l2-2h5v3h-4l-1 2H9l-1 4H5l1-4H2z"/>';
 ICONS.w_smg='<path d="M3 10h14v3h-5l-1 5H8l1-5H3z"/><path d="M17 11.5h4M13 13v3"/>';
 ICONS.w_shotgun='<path d="M2 11h17v2h-8l-2 3H6l1-3H2z"/><path d="M19 11.5h3M12 13.5h4"/>';
@@ -656,6 +657,9 @@ for(const r of RECIPES){
   for(const i of r.inputs) if(ITEMS[i.n] && i.n!==r.name) ITEMS[i.n].recs.push({r,qty:i.q});
 }
 
+const RCAT_ORDER=["Consumables","Plate Carriers","Backpacks","Tacticals","Lethals","Field Upgrades","Fire Support","Gear","Ingredients"];
+const RCAT_MAP={"1-Plate Armor Vest": "Plate Carriers", "2-Plate Armor Vest": "Plate Carriers", "2-Plate Ballistic Gel Vest": "Plate Carriers", "2-Plate Helmet Armor Vest": "Plate Carriers", "3-Plate Armor Vest": "Plate Carriers", "3-Plate Ballistic Gel Vest": "Plate Carriers", "3-Plate Helmet Armor Vest": "Plate Carriers", "3.5-Plate Armor Vest": "Plate Carriers", "Argonaut Armor": "Plate Carriers", "Tempered Armor Vest": "Plate Carriers", "Bandage": "Consumables", "Medkit": "Consumables", "Energy Drink": "Consumables", "Pain Killers": "Consumables", "Self-Revive Kit": "Consumables", "Radiation Blockers": "Consumables", "Smelling Salts": "Consumables", "Sedative Inhaler": "Consumables", "Decoy Grenade": "Tacticals", "Flash": "Tacticals", "Smoke Grenade": "Tacticals", "Snapshot Grenade": "Tacticals", "Stun Grenade": "Tacticals", "Heartbeat Sensor": "Tacticals", "Stim": "Tacticals", "Shock Stick": "Tacticals", "Spotter Scope": "Tacticals", "C4": "Lethals", "Claymore": "Lethals", "Frag Grenade": "Lethals", "Molotov Cocktail": "Lethals", "Proximity Mine": "Lethals", "Semtex": "Lethals", "Thermite": "Lethals", "Throwing Knife": "Lethals", "Drill Charge": "Lethals", "Screamer Mine": "Lethals", "Door Breacher Charge": "Lethals", "Trip Wire": "Lethals", "Zip Gun": "Lethals", "Ammo Box": "Field Upgrades", "Armor Box": "Field Upgrades", "Consumable Box": "Field Upgrades", "Hazmat Box": "Field Upgrades", "Medical Box": "Field Upgrades", "Survivor Box": "Field Upgrades", "Utility Box": "Field Upgrades", "DDOS": "Field Upgrades", "Inflatable Decoy": "Field Upgrades", "Portable Radar": "Field Upgrades", "Recon Drone": "Field Upgrades", "Riot Shield": "Field Upgrades", "Smoke Wall": "Field Upgrades", "Trophy System": "Field Upgrades", "Seeker Drone": "Field Upgrades", "Razor Wire Trap": "Field Upgrades", "Revive Pistol": "Field Upgrades", "UAV": "Fire Support", "Advanced UAV": "Fire Support", "Artillery Beacon": "Fire Support", "Bomb Glider": "Fire Support", "Bombing Run": "Fire Support", "Care Package": "Fire Support", "Combat Drone": "Fire Support", "Crossfire": "Fire Support", "Fulton Drop Marker": "Fire Support", "Impact Warhead": "Fire Support", "Railgun Sentry": "Fire Support", "SAM Airburst Turret": "Fire Support", "Gas Mask": "Gear", "Durable Gas Mask": "Gear", "NVGs": "Gear", "Weak Night Vision Goggles": "Gear", "Elite Night Vision Goggles": "Gear", "Rebreather": "Gear", "Parachute": "Gear", "Disposable Parachute": "Gear", "Defibrillator": "Gear", "Encodable Blank Keycard": "Gear", "Staff Emergency Exfil Keycard": "Gear"};
+const rCat=r=>RCAT_MAP[r.name]||(/Backpack/.test(r.name)?"Backpacks":"Ingredients");
 /* ---------- state ---------- */
 const KEY="mw4fob.v1";
 let done={}; // upgrade id -> number of tiers done
@@ -669,7 +673,8 @@ let learned=new Set();try{learned=new Set(JSON.parse(localStorage.getItem(RKEY)|
 const saveL=()=>{try{localStorage.setItem(RKEY,JSON.stringify([...learned]));}catch(e){}};
 const autoLearned=r=>{const id=r.unlock==="Uncommon Ingredient Printing"?"uncPrint":r.unlock==="Epic Ingredient Printing"?"epicPrint":null;return id?nDone(UPGRADES.find(u=>u.id===id))>0:false;};
 const isLearned=r=>learned.has(r.name)||autoLearned(r);
-let craftFilter="all",craftView="recipes";
+let craftFilter="all",craftView="recipes",craftCat="";
+const craftQ=()=>cur==="craft"?norm($("#q").value):"";
 const MKEY="mw4fob.manuals.v1";
 let manuals=new Set();try{manuals=new Set(JSON.parse(localStorage.getItem(MKEY)||"[]"));}catch(e){}
 const saveM=()=>{try{localStorage.setItem(MKEY,JSON.stringify([...manuals]));}catch(e){}};
@@ -837,11 +842,18 @@ const routeOrd=u=>{
   if(/Orders/.test(u)) return 2; if(/Op\./.test(u)) return 2.5;
   if(u==="X01") return 4; return 3;
 };
+function catPills(keys,label,pool,keyOf){
+  const n=k=>pool.filter(x=>keyOf(x)===k).length;
+  return keys.filter(k=>n(k)||craftCat===k).map(k=>`<button class="chip${craftCat===k?" on":""}" data-cc="${k}">${label(k)} <b>${n(k)}</b></button>`).join("");
+}
 function renderManuals(){
-  const nL=MANUALS.filter(manualHave).length;
-  $("#craftChips").innerHTML=[["all","All",MANUALS.length],["todo","Not learned",MANUALS.length-nL],["learned","Learned",nL]].map(([k,l,n])=>`<button class="chip${craftFilter===k?" on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
   const order=Object.keys(WCLASS);
-  const rows=MANUALS.filter(w=>craftFilter==="all"||(craftFilter==="learned")===manualHave(w)).sort((a,b)=>order.indexOf(a.c)-order.indexOf(b.c)||a.n.localeCompare(b.n));
+  const q=craftQ(),qpool=MANUALS.filter(w=>!q||nameMatch(w.n,q)||(w.m&&nameMatch("manual "+w.n,q)));
+  $("#craftCats").innerHTML=catPills(order,k=>WCLASS[k][2]||WCLASS[k][0],qpool,w=>w.c);
+  const pool=qpool.filter(w=>!craftCat||w.c===craftCat);
+  const nL=pool.filter(manualHave).length;
+  $("#craftChips").innerHTML=[["all","All",pool.length],["todo","Not learned",pool.length-nL],["learned","Learned",nL]].map(([k,l,n])=>`<button class="chip${craftFilter===k?" on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
+  const rows=pool.filter(w=>craftFilter==="all"||(craftFilter==="learned")===manualHave(w)).sort((a,b)=>order.indexOf(a.c)-order.indexOf(b.c)||a.n.localeCompare(b.n));
   let html="",last=null;
   for(const w of rows){
     if(w.c!==last){html+=`<div class="sec-h" style="--c:var(--r-n)"><i></i>${WCLASS[w.c][0]}</div>`;last=w.c;}
@@ -853,9 +865,13 @@ function renderManuals(){
 function renderCraft(){
   document.querySelectorAll("#craftSeg button").forEach(b=>b.classList.toggle("on",b.dataset.cv===craftView));
   if(craftView==="manuals") return renderManuals();
-  const nL=RECIPES.filter(isLearned).length;
-  $("#craftChips").innerHTML=[["all","All",RECIPES.length],["todo","Not learned",RECIPES.length-nL],["learned","Learned",nL]].map(([k,l,n])=>`<button class="chip${craftFilter===k?" on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
-  const rows=[...RECIPES].filter(r=>craftFilter==="all"||(craftFilter==="learned")===isLearned(r)).sort((a,b)=>(routeOrd(a.unlock)-routeOrd(b.unlock))||a.name.localeCompare(b.name));
+  const q=craftQ(),qpool=RECIPES.filter(r=>!q||nameMatch(r.name,q));
+  $("#craftCats").innerHTML=catPills(RCAT_ORDER,k=>k,qpool,rCat);
+  const pool=qpool.filter(r=>!craftCat||rCat(r)===craftCat);
+  const nL=pool.filter(isLearned).length;
+  $("#craftChips").innerHTML=[["all","All",pool.length],["todo","Not learned",pool.length-nL],["learned","Learned",nL]].map(([k,l,n])=>`<button class="chip${craftFilter===k?" on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
+  const rows=pool.filter(r=>craftFilter==="all"||(craftFilter==="learned")===isLearned(r)).sort((a,b)=>(routeOrd(a.unlock)-routeOrd(b.unlock))||a.name.localeCompare(b.name));
+  if(!rows.length){$("#craftList").innerHTML=`<div class="empty">None.</div>`;return;}
   $("#craftList").innerHTML=rows.map(r=>{
     const makes=ITEMS[r.name];
     const chips=r.inputs.map(i=>{
@@ -1048,14 +1064,16 @@ document.addEventListener("click",e=>{
   const mb=e.target.closest("[data-man]");
   if(mb){if(mb.disabled)return;const n=mb.dataset.man;manuals.has(n)?manuals.delete(n):manuals.add(n);saveM();renderCraft();refreshCode();return;}
   const cv=e.target.closest("[data-cv]");
-  if(cv){if(craftView!==cv.dataset.cv){craftView=cv.dataset.cv;craftFilter="all";renderCraft();}return;}
+  if(cv){if(craftView!==cv.dataset.cv){craftView=cv.dataset.cv;craftFilter="all";craftCat="";renderCraft();}return;}
+  const cc=e.target.closest("[data-cc]");
+  if(cc){craftCat=craftCat===cc.dataset.cc?"":cc.dataset.cc;renderCraft();return;}
   const cf=e.target.closest("[data-cf]");
   if(cf){craftFilter=cf.dataset.cf;renderCraft();return;}
   const tipT=e.target.closest("[data-tip]");
   if(tipT){e.stopPropagation();const tp=tipT.parentElement.querySelector(".stip");tp.classList.toggle("hide");return;}
   document.querySelectorAll(".stip").forEach(x=>x.classList.add("hide"));
   const gr=e.target.closest("[data-gorecipe]");
-  if(gr){navPush();closeSheet();if(craftView!=="recipes"||craftFilter!=="all"){craftView="recipes";craftFilter="all";renderCraft();}tab("craft",true);flashEl([...document.querySelectorAll("#craftList [data-recipe]")].find(el=>el.dataset.recipe===gr.dataset.gorecipe));return;}
+  if(gr){navPush();closeSheet();$("#q").value="";craftView="recipes";craftFilter="all";craftCat="";tab("craft",true);flashEl([...document.querySelectorAll("#craftList [data-recipe]")].find(el=>el.dataset.recipe===gr.dataset.gorecipe));return;}
   const gu=e.target.closest("[data-goup]");
   if(gu){navPush();closeSheet();tab("fob",true);flashEl(document.getElementById(`t-${gu.dataset.goup}-${gu.dataset.gotier}`));return;}
   const it=e.target.closest("[data-item]");
@@ -1099,6 +1117,7 @@ function onSearch(){
   const raw=$("#q").value;
   $("#clr").style.display=raw?"block":"none";
   clearTimeout(autoTimer);
+  if(cur==="craft"){$("#results").classList.add("hide");results=[];renderCraft();return;}
   results=searchAll(raw);sel=0;
   const box=$("#results");
   if(!raw.trim()){box.classList.add("hide");return;}
@@ -1153,6 +1172,7 @@ function tab(which,keepScroll){
   $("#tStash").classList.toggle("on",which==="loot");$("#tCraft").classList.toggle("on",which==="craft");$("#tFob").classList.toggle("on",which==="fob");
   $("#stashView").classList.toggle("hide",which!=="loot");$("#craftView").classList.toggle("hide",which!=="craft");$("#fobView").classList.toggle("hide",which!=="fob");
   $("#chips").classList.toggle("hide",which!=="loot");
+  if(which==="craft") renderCraft();
   try{if(location.hash!=="#"+which) history.replaceState(null,"","#"+which);}catch(e){}
   if(!keepScroll) window.scrollTo(0,0);
 }
