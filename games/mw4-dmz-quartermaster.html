@@ -203,6 +203,8 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .sugg .info{top:9px}
 .sugg b{margin-top:6px}
 .sugg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.report{display:block;margin-top:12px;font-size:13px;color:var(--muted);text-decoration:underline;text-decoration-color:#4b5563;text-underline-offset:3px}
+#foot .report{margin-top:6px}
 .hide{display:none!important}
 </style>
 </head>
@@ -243,6 +245,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
       <div style="margin-top:6px;display:flex;gap:8px" class="hide" id="loadAsk"><button class="btn" id="loadYes" style="border-color:var(--keep);color:var(--keep)">Overwrite progress</button><button class="btn" id="loadNo">Cancel</button></div>
       <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="resetBtn">Reset all</button><button class="btn hide" id="resetYes" style="border-color:var(--keep);color:var(--keep)">Confirm reset</button></div>
     </details>
+  <div class="foot" id="foot"></div>
 
 </div>
 
@@ -786,6 +789,8 @@ const codexRecipe=r=>`${CODEX}recipes/${r.unlock==="X01"?"x01-":""}${slug(r.name
 const UP_SLUG={stashItem:"stash-item-upgrade",stashWeapon:"stash-weapon-upgrade",bank:"bank-upgrade",uncPrint:"ingredient-printing",epicPrint:"epic-ingredient-printing",mia:"mia-recovery-discount",gunsmith:"gunsmith-discount",dogtag:"dog-tag-case-storage-upgrade",vendor:"vendor-item-slots-upgrade"};
 const codexUp=u=>`${CODEX}upgrades/${UP_SLUG[u.id]}/`;
 const LINK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+const REPORT="https://github.com/triffski/tr_scripts/issues/new?template=dmz-data-correction.yml";
+const reportLink=name=>`<a class="report" href="${REPORT}${name?"&item="+encodeURIComponent(name)+"&title="+encodeURIComponent("[DMZ] "+name):""}" target="_blank" rel="noopener">Report a correction</a>`;
 const ext=href=>`<a class="ext" href="${href}" target="_blank" rel="noopener" title="Open on DMZ Codex" aria-label="Open on DMZ Codex">${LINK_SVG}</a>`;
 
 /* ---------- helpers ---------- */
@@ -1038,7 +1043,7 @@ function detailHTML(it,compact){
     if(near.length) h+=`<div class="sh-sec"><h3>Other keys here</h3><div class="need">${near.map(n=>`<button class="ichip" style="--rc:${rcol(ITEMS[n])}" data-item="${esc(n)}"><span class="mi">${svg("key")}</span>${esc(n)}</button>`).join("")}</div></div>`;}
   else if(!it.ups.length && !it.recs.length) h+=`<div class="sh-sec tnote">No FOB upgrade or 3D Printer recipe uses this.</div>`;
 
-  if(!compact) h+=`<a class="codex" href="${codexItem(it.name)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(it.name)} on DMZ Codex</span></a>`;
+  if(!compact) h+=`<a class="codex" href="${codexItem(it.name)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(it.name)} on DMZ Codex</span></a>${reportLink(it.name)}`;
   return h;
 }
 let sheetItem=null;const navStack=[];let restoring=false;
@@ -1064,12 +1069,12 @@ function recipeHTML(r){
     <div class="sh-sec"><h3>Needs</h3><div class="need">${chips}</div></div>
     ${r.unlock==="Find in game"?`<div class="sh-sec"><h3>Recipe loot</h3><div class="tnote">${esc(RECIPE_CONT[r.name]||"Filing cabinets, chemical storage, weapons lockers")}</div></div>`:""}
     ${makes?`<div class="sh-sec"><button class="reclink" data-item="${esc(r.name)}">${esc(r.name)} as loot</button></div>`:""}
-    <a class="codex" href="${codexRecipe(r)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(r.name)} on DMZ Codex</span></a>`;
+    <a class="codex" href="${codexRecipe(r)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(r.name)} on DMZ Codex</span></a>${reportLink(r.name)}`;
 }
 function manualHTML(w){
   const L=manualHave(w);
   return `<div class="sh-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div style="flex:1;min-width:0"><h2>${esc(w.n)}</h2><div class="sub">${WCLASS[w.c][0]} · Gunsmith</div></div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned">${LEARN_SVG}</button></div>
-    <div class="verdict" style="--c:var(${L?"--sell":"--print"})"><div class="vt">${w.m?(L?"LEARNED":"NOT LEARNED"):"NO MANUAL NEEDED"}</div>${w.p?`<div class="kreq">Gunsmith $${w.p.toLocaleString("en-GB")}</div>`:""}</div>`;
+    <div class="verdict" style="--c:var(${L?"--sell":"--print"})"><div class="vt">${w.m?(L?"LEARNED":"NOT LEARNED"):"NO MANUAL NEEDED"}</div>${w.p?`<div class="kreq">Gunsmith $${w.p.toLocaleString("en-GB")}</div>`:""}</div>${reportLink(w.n)}`;
 }
 function refreshSheet(){if(!sheetItem) return;const h=sheetHTML(sheetItem);if(h) $("#sheet").innerHTML=`<div class="grab"></div>`+h;}
 function openSheet(name){
@@ -1325,6 +1330,7 @@ document.addEventListener("click",e=>{if(e.target.closest(".node")) refreshCode(
 refreshCode();
 
 window.addEventListener("popstate",()=>{if(navStack.length) goBack();});
+$("#foot").innerHTML=reportLink("");
 renderStash();renderFob();renderCraft();
 tab(["fob","craft","loot"].includes(location.hash.slice(1))?location.hash.slice(1):"loot");
 </script>
