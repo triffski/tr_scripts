@@ -11,10 +11,12 @@ Games-related bits 'n bobs.
 No install/dependencies - open the `.html` in a browser or download it to your phone. Progress is saved to your browser. 
 
 <p align="center">
-  <img src="screenshots/fob.jpg" width="200" alt="FOB upgrades">
-  <img src="screenshots/crafting.jpg" width="200" alt="3D Printer recipes">
-  <img src="screenshots/gunsmith.jpg" width="200" alt="Gunsmith weapon manuals">
-  <img src="screenshots/key.jpg" width="200" alt="Key details">
+  <img src="screenshots/fob.jpg" width="280" alt="FOB upgrades">
+  <img src="screenshots/crafting.jpg" width="280" alt="3D Printer recipes">
+</p>
+<p align="center">
+  <img src="screenshots/gunsmith.jpg" width="280" alt="Gunsmith weapon manuals">
+  <img src="screenshots/key.jpg" width="280" alt="Key details">
 </p>
 
 - **FOB:** upgrade checklist:
