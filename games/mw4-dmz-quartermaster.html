@@ -232,15 +232,17 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
   <section id="fobView" class="hide">
     <div class="summary" id="summary"></div>
     <div id="tree"></div>
-    <details class="io">
+
+  </section>
+
+  <details class="io">
       <summary>Export - Import - Reset</summary>
-      <div style="display:flex;gap:8px;margin-top:8px"><input id="code" class="codebox" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Paste a code"><button class="btn" id="copyBtn">Copy</button><button class="btn" id="loadBtn">Load</button></div>
-      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="saveBtn">Save file</button><button class="btn" id="fileBtn">Load file</button><input type="file" id="fileIn" accept=".txt,text/plain" class="hide"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="code" class="codebox" readonly autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Paste a code here"><button class="btn" id="copyBtn">Copy</button><button class="btn" id="loadBtn">Paste</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="saveBtn">Save to .txt</button><button class="btn" id="fileBtn">Import from .txt</button><input type="file" id="fileIn" accept=".txt,text/plain" class="hide"></div>
       <div class="tnote" id="codeMsg"></div>
       <div style="margin-top:6px;display:flex;gap:8px" class="hide" id="loadAsk"><button class="btn" id="loadYes" style="border-color:var(--keep);color:var(--keep)">Overwrite progress</button><button class="btn" id="loadNo">Cancel</button></div>
       <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="resetBtn">Reset all</button><button class="btn hide" id="resetYes" style="border-color:var(--keep);color:var(--keep)">Confirm reset</button></div>
     </details>
-  </section>
 
 </div>
 
@@ -1100,7 +1102,7 @@ if(canHover){
     const el=e.target.closest("[data-item]");
     if(!el){if(tipFor)hideTip();return;}
     if(tipFor===el) return;
-    if(tip.classList.contains("on")){tip.style.transition="none";tip.style.opacity="0";void tip.offsetWidth;tip.style.transition="";tip.style.opacity="";}
+    if(tip.classList.contains("on")||+getComputedStyle(tip).opacity>0){tip.classList.remove("on");tip.style.transition="none";tip.style.opacity="0";void tip.offsetWidth;tip.style.transition="";tip.style.opacity="";void tip.offsetWidth;}
     tipFor=el;tip.innerHTML=detailHTML(ITEMS[el.dataset.item],true);
     const r=el.getBoundingClientRect(),tw=340,th=tip.offsetHeight,W=innerWidth,H=innerHeight;
     let x,y;
@@ -1270,7 +1272,7 @@ function parseCode(text){
   return {code:encodeState(d,l,mn),done:d,learned:l,manuals:mn,lvl:m[4]?+m[4]:0};
 }
 let pending=null;
-function refreshCode(){if(document.activeElement!==$("#code")&&!pending) $("#code").value=makeCode();}
+function refreshCode(){const c=$("#code");if(c.readOnly&&!pending) c.value=makeCode();}
 const codeMsg=t=>{$("#codeMsg").textContent=t;};
 $("#copyBtn").addEventListener("click",async()=>{
   const c=makeCode();$("#code").value=c;$("#code").select();
@@ -1303,11 +1305,19 @@ function askLoad(text){
 function applyLoad(p){
   done=p.done;learned=p.learned;manuals=p.manuals;
   if(p.lvl) tickLevel(p.lvl);
-  save();saveL();saveM();renderFob();renderStash();renderCraft();$("#code").blur();refreshCode();codeMsg("Loaded");
+  save();saveL();saveM();renderFob();renderStash();renderCraft();codeBox.blur();lockBox();codeMsg("Loaded");
 }
-$("#loadBtn").addEventListener("click",()=>askLoad($("#code").value));
+const codeBox=$("#code");
+function lockBox(){codeBox.readOnly=true;if(!pending) codeBox.value=makeCode();}
+codeBox.addEventListener("focus",()=>{if(codeBox.readOnly) setTimeout(()=>codeBox.select(),0);});
+codeBox.addEventListener("input",()=>{if(!codeBox.readOnly&&parseCode(codeBox.value)){askLoad(codeBox.value);codeBox.readOnly=true;codeBox.blur();}});
+codeBox.addEventListener("blur",()=>{if(!codeBox.readOnly&&!pending){lockBox();codeMsg("");}});
+$("#loadBtn").addEventListener("click",async()=>{
+  try{const t=await navigator.clipboard.readText();if(parseCode(t)){askLoad(t);return;}}catch(e){}
+  codeBox.readOnly=false;codeBox.value="";codeBox.focus();codeMsg("Paste your code into the box");
+});
 $("#loadYes").addEventListener("click",()=>{if(pending) applyLoad(pending);pending=null;$("#loadAsk").classList.add("hide");});
-$("#loadNo").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");refreshCode();});
+$("#loadNo").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");lockBox();});
 $("#fileBtn").addEventListener("click",()=>$("#fileIn").click());
 $("#fileIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f) return;
   try{askLoad(await f.text());}catch(err){codeMsg("Couldn't read that file");}});
