@@ -8,6 +8,13 @@ Games-related bits 'n bobs.
 
 No install/dependencies - just open the `.html`. Progress is saved to your browser. 
 
+<p align="center">
+  <img src="screenshots/fob.jpg" width="200" alt="FOB upgrades">
+  <img src="screenshots/crafting.jpg" width="200" alt="3D Printer recipes">
+  <img src="screenshots/gunsmith.jpg" width="200" alt="Gunsmith weapon manuals">
+  <img src="screenshots/key.jpg" width="200" alt="Key details">
+</p>
+
 - **FOB:** upgrade checklist:
   - See what you've unlocked, prioritise what's left and see where to gather what you need.
   - Suggested next upgrade, based on your progress.
