@@ -19,6 +19,6 @@ No install/dependencies - just open the `.html`. Progress is saved to your brows
   - Check if you should exfil a manual/recipe/item or can safely pass it on to a teammate.
 - **Search:** instantly search most loot, recipes, manuals and upgrades.
 
-Export/Import your progress to back it up or move between devices. Enter your DMZ level to automatically check off all level-based rewards and check off the rest manually (quite satisfying...).
+Export/Import your progress to back it up or move between devices. Enter your DMZ level to automatically check off all level-based rewards and enter the rest manually (quite satisfying...).
 
 Data is mostly community-sourced (DMZ Codex, CODCentral, Activision) plus in-game checks, so some costs and locations are unconfirmed.
