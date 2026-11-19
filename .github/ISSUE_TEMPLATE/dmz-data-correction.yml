@@ -1,0 +1,38 @@
+name: MW4 DMZ Quartermaster - data correction
+description: Something in MW4 DMZ Quartermaster is wrong or missing (location, cost, recipe, key, weapon...)
+title: "[DMZ] "
+labels: ["dmz-data"]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Item, recipe, weapon, key or upgrade
+      description: Name as it appears in game
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's wrong
+      options:
+        - Location / grid ref / threat
+        - Cost or price
+        - Recipe ingredients or unlock
+        - Rarity or category
+        - Key requirements
+        - Missing entirely
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: Correct info
+      description: The right value, location (with grid ref if you have it) or details
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Optional - drop a screenshot or say where you saw it
