@@ -188,6 +188,10 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .seg{display:flex;background:var(--panel);border-radius:10px;padding:3px;gap:3px;margin:10px 0 0}
 .seg button{flex:1;padding:8px;border-radius:8px;font-weight:600;font-size:14px;color:var(--muted)}
 .seg button.on{background:var(--panel2);color:var(--text)}
+.lvl{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:10px 2px 0;font-size:13px;font-weight:600;color:var(--muted)}
+.lvl input{width:64px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:600 15px system-ui,sans-serif;text-align:center;outline:none;-moz-appearance:textfield}
+.lvl input::-webkit-inner-spin-button,.lvl input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lvl input:focus{border-color:#4b5563}
 .hide{display:none!important}
 </style>
 </head>
@@ -209,6 +213,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 
   <section id="craftView" class="hide">
         <div class="seg" id="craftSeg"><button data-cv="recipes" class="on">Recipes</button><button data-cv="manuals">Manuals</button></div>
+        <label class="lvl" id="lvlRow">DMZ level<input id="lvl" type="number" inputmode="numeric" min="0" max="999" placeholder="-"></label>
         <div class="chips" id="craftCats"></div>
         <div class="chips" id="craftChips"></div>
         <div class="list" id="craftList"></div>
@@ -671,7 +676,11 @@ const isNext=(u,t)=>t.idx===nDone(u);
 const RKEY="mw4fob.recipes.v1";
 let learned=new Set();try{learned=new Set(JSON.parse(localStorage.getItem(RKEY)||"[]"));}catch(e){}
 const saveL=()=>{try{localStorage.setItem(RKEY,JSON.stringify([...learned]));}catch(e){}};
-const autoLearned=r=>{const id=r.unlock==="Uncommon Ingredient Printing"?"uncPrint":r.unlock==="Epic Ingredient Printing"?"epicPrint":null;return id?nDone(UPGRADES.find(u=>u.id===id))>0:false;};
+const LKEY="mw4fob.level.v1";
+let dmzLvl=0;try{dmzLvl=+localStorage.getItem(LKEY)||0;}catch(e){}
+const saveLvl=()=>{try{localStorage.setItem(LKEY,String(dmzLvl));}catch(e){}};
+const lvlReq=r=>{const m=r.unlock.match(/^DMZ Lv (\d+)$/);return m?+m[1]:0;};
+const autoLearned=r=>{const id=r.unlock==="Uncommon Ingredient Printing"?"uncPrint":r.unlock==="Epic Ingredient Printing"?"epicPrint":null;if(id) return nDone(UPGRADES.find(u=>u.id===id))>0;const L=lvlReq(r);return L?dmzLvl>=L:false;};
 const isLearned=r=>learned.has(r.name)||autoLearned(r);
 let craftFilter="all",craftView="recipes",craftCat="";
 const craftQ=()=>cur==="craft"?norm($("#q").value):"";
@@ -864,6 +873,7 @@ function renderManuals(){
 }
 function renderCraft(){
   document.querySelectorAll("#craftSeg button").forEach(b=>b.classList.toggle("on",b.dataset.cv===craftView));
+  $("#lvlRow").classList.toggle("hide",craftView==="manuals");
   if(craftView==="manuals") return renderManuals();
   const q=craftQ(),qpool=RECIPES.filter(r=>!q||nameMatch(r.name,q));
   $("#craftCats").innerHTML=catPills(RCAT_ORDER,k=>k,qpool,rCat);
@@ -1179,12 +1189,14 @@ function tab(which,keepScroll){
 $("#tStash").addEventListener("click",()=>{if(cur!=="loot")navPush();tab("loot");});
 $("#tCraft").addEventListener("click",()=>{if(cur!=="craft")navPush();tab("craft");});
 $("#tFob").addEventListener("click",()=>{if(cur!=="fob")navPush();tab("fob");});
+$("#lvl").value=dmzLvl||"";
+$("#lvl").addEventListener("input",()=>{const v=parseInt($("#lvl").value,10);dmzLvl=isNaN(v)?0:Math.max(0,Math.min(999,v));saveLvl();renderCraft();refreshCode();});
 $("#resetBtn").addEventListener("click",()=>$("#resetYes").classList.toggle("hide"));
 $("#resetYes").addEventListener("click",()=>{done={};save();$("#resetYes").classList.add("hide");renderFob();renderStash();refreshCode();});
 
 /* ---------- progress code ---------- */
 // FOB1- then one digit per upgrade, in UPGRADES order
-const makeCode=()=>{let b=0n;RECIPES.forEach((r,i)=>{if(learned.has(r.name))b|=1n<<BigInt(i);});let mb=0n;MANUALS.forEach((w,i)=>{if(manuals.has(w.n))mb|=1n<<BigInt(i);});return "FOB1-"+UPGRADES.map(u=>nDone(u)).join("")+(b||mb?"-"+b.toString(36).toUpperCase():"")+(mb?"-"+mb.toString(36).toUpperCase():"");};
+const makeCode=()=>{let b=0n;RECIPES.forEach((r,i)=>{if(learned.has(r.name))b|=1n<<BigInt(i);});let mb=0n;MANUALS.forEach((w,i)=>{if(manuals.has(w.n))mb|=1n<<BigInt(i);});return "FOB1-"+UPGRADES.map(u=>nDone(u)).join("")+(b||mb?"-"+b.toString(36).toUpperCase():"")+(mb?"-"+mb.toString(36).toUpperCase():"")+(dmzLvl?"."+dmzLvl:"");};
 function refreshCode(){if(document.activeElement!==$("#code")) $("#code").value=makeCode();}
 const codeMsg=t=>{$("#codeMsg").textContent=t;};
 $("#copyBtn").addEventListener("click",async()=>{
@@ -1192,13 +1204,14 @@ $("#copyBtn").addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(c);codeMsg("Copied");}catch(e){codeMsg("Selected");}
 });
 $("#loadBtn").addEventListener("click",()=>{
-  const m=$("#code").value.trim().toUpperCase().match(/^FOB1-(\d+)(?:-([0-9A-Z]+))?(?:-([0-9A-Z]+))?$/);
+  const m=$("#code").value.trim().toUpperCase().match(/^FOB1-(\d+)(?:-([0-9A-Z]+))?(?:-([0-9A-Z]+))?(?:\.(\d+))?$/);
   if(!m||m[1].length!==UPGRADES.length){codeMsg("Not a valid code");return;}
   UPGRADES.forEach((u,i)=>{done[u.id]=Math.min(+m[1][i],u.tiers.length);});
   let bits=0n;for(const ch of (m[2]||"").toLowerCase()) bits=bits*36n+BigInt(parseInt(ch,36));
   learned=new Set(RECIPES.filter((r,i)=>(bits>>BigInt(i))&1n).map(r=>r.name));saveL();
   let mbits=0n;for(const ch of (m[3]||"").toLowerCase()) mbits=mbits*36n+BigInt(parseInt(ch,36));
   manuals=new Set(MANUALS.filter((w,i)=>(mbits>>BigInt(i))&1n).map(w=>w.n));saveM();
+  dmzLvl=m[4]?Math.min(999,+m[4]):0;saveLvl();$("#lvl").value=dmzLvl||"";
   save();renderFob();renderStash();renderCraft();$("#code").blur();refreshCode();codeMsg("Loaded");
 });
 document.addEventListener("click",e=>{if(e.target.closest(".node")) refreshCode();});
