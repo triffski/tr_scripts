@@ -6,7 +6,7 @@ Games-related bits 'n bobs.
 
 **`mw4-dmz-quartermaster.html`** - MW4 DMZ stash and FOB advisor, built for phones, fast use in the field and making best use of precious bag space. Check your stash and unlocks in-game, search every piece of loot, exfil with only what you need and pass on what you don't. 
 
-No install/dependencies - just open the `.html`. Progress is saved to your browser. 
+No install/dependencies - open the `.html` in a browser or download it to your phone. Progress is saved to your browser. 
 
 <p align="center">
   <img src="screenshots/fob.jpg" width="200" alt="FOB upgrades">
