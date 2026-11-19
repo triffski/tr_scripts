@@ -197,6 +197,11 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .cat-h b{font-weight:600;letter-spacing:0;color:#5d6570}
 #craftList .cat-h:first-child{margin-top:8px}
 .kreq{font-size:14px;font-weight:600;margin:3px 0 1px;color:var(--text)}
+.sugg{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+.sugg small{line-height:20px;padding-right:26px}
+.sugg .info{top:9px}
+.sugg b{margin-top:6px}
+.sugg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hide{display:none!important}
 </style>
 </head>
@@ -227,9 +232,11 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
     <div class="summary" id="summary"></div>
     <div id="tree"></div>
     <details class="io">
-      <summary>Export / import · reset</summary>
+      <summary>Export - Import - Reset</summary>
       <div style="display:flex;gap:8px;margin-top:8px"><input id="code" class="codebox" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Paste a code"><button class="btn" id="copyBtn">Copy</button><button class="btn" id="loadBtn">Load</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="saveBtn">Save file</button><button class="btn" id="fileBtn">Load file</button><input type="file" id="fileIn" accept=".txt,text/plain" class="hide"></div>
       <div class="tnote" id="codeMsg"></div>
+      <div style="margin-top:6px;display:flex;gap:8px" class="hide" id="loadAsk"><button class="btn" id="loadYes" style="border-color:var(--keep);color:var(--keep)">Overwrite progress</button><button class="btn" id="loadNo">Cancel</button></div>
       <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="resetBtn">Reset all</button><button class="btn hide" id="resetYes" style="border-color:var(--keep);color:var(--keep)">Confirm reset</button></div>
     </details>
   </section>
@@ -683,7 +690,10 @@ const isNext=(u,t)=>t.idx===nDone(u);
 const RKEY="mw4fob.recipes.v1";
 let learned=new Set();try{learned=new Set(JSON.parse(localStorage.getItem(RKEY)||"[]"));}catch(e){}
 const saveL=()=>{try{localStorage.setItem(RKEY,JSON.stringify([...learned]));}catch(e){}};
-if(learned.has("NVGs")){learned.delete("NVGs");learned.add("Night Vision Goggles");saveL();}
+/* Saved progress stores names. If a recipe or weapon is ever renamed, add old:new here - never just edit the name. */
+const RENAMED={"NVGs":"Night Vision Goggles"};
+const migrate=set=>{let ch=false;for(const o in RENAMED) if(set.has(o)){set.delete(o);set.add(RENAMED[o]);ch=true;}return ch;};
+if(migrate(learned)) saveL();
 function tickLevel(n){const r=RECIPES.filter(x=>lvlReq(x)&&lvlReq(x)<=n).sort((a,b)=>lvlReq(b)-lvlReq(a))[0];if(r) learned.add(r.name);}
 try{const ol=+localStorage.getItem("mw4fob.level.v1");if(ol){tickLevel(ol);saveL();}localStorage.removeItem("mw4fob.level.v1");}catch(e){}
 const lvlReq=r=>{const m=r.unlock.match(/^DMZ Lv (\d+)$/);return m?+m[1]:0;};
@@ -695,6 +705,7 @@ let craftFilter="all",craftView="recipes",craftCat="";
 const craftQ=()=>cur==="craft"?norm($("#q").value):"";
 const MKEY="mw4fob.manuals.v1";
 let manuals=new Set();try{manuals=new Set(JSON.parse(localStorage.getItem(MKEY)||"[]"));}catch(e){}
+if(migrate(manuals)) try{localStorage.setItem(MKEY,JSON.stringify([...manuals]));}catch(e){}
 const saveM=()=>{try{localStorage.setItem(MKEY,JSON.stringify([...manuals]));}catch(e){}};
 const manualHave=w=>!w.m||manuals.has(w.n);
 
@@ -1201,29 +1212,64 @@ function tab(which,keepScroll){
 $("#tStash").addEventListener("click",()=>{if(cur!=="loot")navPush();tab("loot");});
 $("#tCraft").addEventListener("click",()=>{if(cur!=="craft")navPush();tab("craft");});
 $("#tFob").addEventListener("click",()=>{if(cur!=="fob")navPush();tab("fob");});
-$("#resetBtn").addEventListener("click",()=>$("#resetYes").classList.toggle("hide"));
-$("#resetYes").addEventListener("click",()=>{done={};save();$("#resetYes").classList.add("hide");renderFob();renderStash();refreshCode();});
+$("#resetBtn").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");$("#resetYes").classList.toggle("hide");});
+$("#resetYes").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");done={};learned=new Set();manuals=new Set();save();saveL();saveM();$("#resetYes").classList.add("hide");renderFob();renderStash();renderCraft();refreshCode();codeMsg("Reset");});
 
 /* ---------- progress code ---------- */
 // FOB1- then one digit per upgrade, in UPGRADES order
-const makeCode=()=>{let b=0n;RECIPES.forEach((r,i)=>{if(learned.has(r.name))b|=1n<<BigInt(i);});let mb=0n;MANUALS.forEach((w,i)=>{if(manuals.has(w.n))mb|=1n<<BigInt(i);});return "FOB1-"+UPGRADES.map(u=>nDone(u)).join("")+(b||mb?"-"+b.toString(36).toUpperCase():"")+(mb?"-"+mb.toString(36).toUpperCase():"");};
-function refreshCode(){if(document.activeElement!==$("#code")) $("#code").value=makeCode();}
+/* Progress code - FORMAT RULES, so old codes and saves keep working after updates:
+   - UPGRADES, RECIPES and MANUALS are positional: only ever APPEND new entries at the end. Never reorder or delete
+     (keep a retired entry in place). New entries decode as not done / not learned from older codes.
+   - One base36 character per upgrade (0-9 then A-Z), so an upgrade can grow past 9 tiers.
+   - Shorter codes (made before an upgrade was added) and longer codes (from a newer version) both load.
+   - A real format change gets a new prefix (FOB2-) with FOB1 decoding kept. */
+const encodeState=(d,l,mn)=>{let b=0n;RECIPES.forEach((r,i)=>{if(l.has(r.name))b|=1n<<BigInt(i);});let mb=0n;MANUALS.forEach((w,i)=>{if(mn.has(w.n))mb|=1n<<BigInt(i);});return "FOB1-"+UPGRADES.map(u=>Math.min(d[u.id]||0,u.tiers.length).toString(36)).join("").toUpperCase()+(b||mb?"-"+b.toString(36).toUpperCase():"")+(mb?"-"+mb.toString(36).toUpperCase():"");};
+const makeCode=()=>encodeState(done,learned,manuals);
+const b36=str=>{let v=0n;for(const ch of (str||"").toLowerCase()) v=v*36n+BigInt(parseInt(ch,36));return v;};
+function parseCode(text){
+  const m=String(text).toUpperCase().match(/FOB1-([0-9A-Z]+)(?:-([0-9A-Z]+))?(?:-([0-9A-Z]+))?(?:\.(\d+))?/);
+  if(!m) return null;
+  const d={};UPGRADES.forEach((u,i)=>{d[u.id]=Math.min(parseInt(m[1][i]||"0",36)||0,u.tiers.length);});
+  const bits=b36(m[2]),mbits=b36(m[3]);
+  const l=new Set(RECIPES.filter((r,i)=>(bits>>BigInt(i))&1n).map(r=>r.name));
+  const mn=new Set(MANUALS.filter((w,i)=>(mbits>>BigInt(i))&1n).map(w=>w.n));
+  return {code:encodeState(d,l,mn),done:d,learned:l,manuals:mn,lvl:m[4]?+m[4]:0};
+}
+let pending=null;
+function refreshCode(){if(document.activeElement!==$("#code")&&!pending) $("#code").value=makeCode();}
 const codeMsg=t=>{$("#codeMsg").textContent=t;};
 $("#copyBtn").addEventListener("click",async()=>{
   const c=makeCode();$("#code").value=c;$("#code").select();
   try{await navigator.clipboard.writeText(c);codeMsg("Copied");}catch(e){codeMsg("Selected");}
 });
-$("#loadBtn").addEventListener("click",()=>{
-  const m=$("#code").value.trim().toUpperCase().match(/^FOB1-(\d+)(?:-([0-9A-Z]+))?(?:-([0-9A-Z]+))?(?:\.(\d+))?$/);
-  if(!m||m[1].length!==UPGRADES.length){codeMsg("Not a valid code");return;}
-  UPGRADES.forEach((u,i)=>{done[u.id]=Math.min(+m[1][i],u.tiers.length);});
-  let bits=0n;for(const ch of (m[2]||"").toLowerCase()) bits=bits*36n+BigInt(parseInt(ch,36));
-  learned=new Set(RECIPES.filter((r,i)=>(bits>>BigInt(i))&1n).map(r=>r.name));saveL();
-  let mbits=0n;for(const ch of (m[3]||"").toLowerCase()) mbits=mbits*36n+BigInt(parseInt(ch,36));
-  manuals=new Set(MANUALS.filter((w,i)=>(mbits>>BigInt(i))&1n).map(w=>w.n));saveM();
-  if(m[4]){tickLevel(+m[4]);saveL();}
-  save();renderFob();renderStash();renderCraft();$("#code").blur();refreshCode();codeMsg("Loaded");
+$("#saveBtn").addEventListener("click",()=>{
+  const c=makeCode();$("#code").value=c;
+  try{
+    const d=new Date(),ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const url=URL.createObjectURL(new Blob([c+"\n"],{type:"text/plain"}));
+    const a=document.createElement("a");a.href=url;a.download=`mw4-dmz-progress-${ds}.txt`;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);codeMsg("Saved");
+  }catch(e){codeMsg("Couldn't save here");}
 });
+function askLoad(text){
+  const p=parseCode(text);
+  $("#loadAsk").classList.add("hide");pending=null;
+  if(!p){codeMsg("Not a valid code");return;}
+  $("#code").value=p.code;
+  if(p.code===makeCode()&&!p.lvl){codeMsg("Already loaded");return;}
+  pending=p;codeMsg("Replace your current progress with this code?");$("#loadAsk").classList.remove("hide");
+}
+function applyLoad(p){
+  done=p.done;learned=p.learned;manuals=p.manuals;
+  if(p.lvl) tickLevel(p.lvl);
+  save();saveL();saveM();renderFob();renderStash();renderCraft();$("#code").blur();refreshCode();codeMsg("Loaded");
+}
+$("#loadBtn").addEventListener("click",()=>askLoad($("#code").value));
+$("#loadYes").addEventListener("click",()=>{if(pending) applyLoad(pending);pending=null;$("#loadAsk").classList.add("hide");});
+$("#loadNo").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");refreshCode();});
+$("#fileBtn").addEventListener("click",()=>$("#fileIn").click());
+$("#fileIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f) return;
+  try{askLoad(await f.text());}catch(err){codeMsg("Couldn't read that file");}});
 document.addEventListener("click",e=>{if(e.target.closest(".node")) refreshCode();});
 refreshCode();
 
