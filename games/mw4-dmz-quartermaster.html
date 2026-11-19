@@ -121,8 +121,8 @@ header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-f
 .foot a{color:var(--r-r)}
 .btn{padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-weight:600}
 /* desktop hover tooltip */
-.tip{position:fixed;z-index:50;width:340px;max-height:70vh;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:none;display:block;opacity:0;visibility:hidden;transition:opacity .12s ease,visibility 0s linear .12s;font-size:13px}
-.tip.on{opacity:1;visibility:visible;transition:opacity .12s ease,visibility 0s}
+.tip{position:fixed;z-index:50;width:340px;max-height:70vh;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:none;display:block;opacity:0;visibility:hidden;transition:opacity .16s ease-out,visibility 0s linear .16s;font-size:13px}
+.tip.on{opacity:1;visibility:visible;transition:opacity .2s ease-out,visibility 0s}
 .tip .sh-sec{margin-top:10px}
 .results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--panel2);border:1px solid #3a414b;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6);max-height:60vh;overflow:auto;z-index:30;padding:4px}
 .res{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px;border-radius:8px}
@@ -1100,6 +1100,7 @@ if(canHover){
     const el=e.target.closest("[data-item]");
     if(!el){if(tipFor)hideTip();return;}
     if(tipFor===el) return;
+    if(tip.classList.contains("on")){tip.style.transition="none";tip.style.opacity="0";void tip.offsetWidth;tip.style.transition="";tip.style.opacity="";}
     tipFor=el;tip.innerHTML=detailHTML(ITEMS[el.dataset.item],true);
     const r=el.getBoundingClientRect(),tw=340,th=tip.offsetHeight,W=innerWidth,H=innerHeight;
     let x,y;
