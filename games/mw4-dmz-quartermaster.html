@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MW4 DMZ Quartermaster</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2314171c'/%3E%3Cpath d='M11 39 53 59M53 39 11 59' stroke='%23e8c547' stroke-width='6.5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='25' r='16' fill='%23f2f2f2'/%3E%3Crect x='23' y='33' width='18' height='11' rx='3' fill='%23f2f2f2'/%3E%3Ccircle cx='25.5' cy='25' r='4.8' fill='%2314171c'/%3E%3Ccircle cx='38.5' cy='25' r='4.8' fill='%2314171c'/%3E%3Cpath d='M32 30l-2.6 4.5h5.2z' fill='%2314171c'/%3E%3Cpath d='M28 38.5v4M32 38.5v4M36 38.5v4' stroke='%2314171c' stroke-width='1.8'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0f1114">
+<style>
+:root{
+  --bg:#0f1114;--panel:#171a1f;--panel2:#1e2228;--line:#2a2f37;--text:#e7e9ec;--muted:#8b929c;
+  --keep:#e5484d;--hold:#c4620f;--print:#e8c547;--sell:#3fb950;--repair:#8a97ad;--key:#3fb3a8;
+  --r-u:#5fa83c;--r-r:#3a78c9;--r-e:#8a5fdc;--r-l:#de8a2c;--r-x:#d23f3a;--r-n:#7d8590;--r-c:#8b929c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.wrap{max-width:720px;margin:0 auto;padding:0 12px 96px}
+header{position:sticky;top:0;z-index:20;background:rgba(15,17,20,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin:0 -12px;padding:10px 12px 8px}
+.title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title h1{font-size:15px;margin:0;font-weight:800;letter-spacing:.1px;white-space:nowrap}
+.title h1 span{color:var(--print)}
+.title h1{line-height:1.12}.title h1 span{display:block}
+.tabs{display:flex;background:var(--panel);border-radius:10px;padding:3px;gap:3px}
+.tabs button{padding:7px 9px;border-radius:8px;font-weight:600;font-size:13.5px;color:var(--muted)}
+.tabs button.on{background:var(--panel2);color:var(--text)}
+.search{margin-top:8px;position:relative}
+.search input{width:100%;padding:11px 38px 11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:16px;outline:none}
+.search input:focus{border-color:#4b5563}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.search .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;color:var(--muted);font-size:18px;display:none}
+.chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:13px;font-weight:600;color:var(--muted)}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chip.on{color:var(--text);border-color:#4b5563;background:var(--panel2)}
+.chip b{font-weight:700;color:var(--text)}
+.legend{margin:10px 2px 4px;font-size:12px;color:var(--muted);display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.legend span{display:grid!important;grid-template-columns:10px 1fr;column-gap:6px;align-items:baseline}
+.legend b{color:var(--text);font-size:13px}
+.legend em{font-style:normal;grid-column:2}
+.legend span{display:flex;gap:6px;align-items:baseline}
+.legend i{flex:none;width:8px;height:8px;border-radius:2px;transform:translateY(1px)}
+.list{margin-top:6px;display:flex;flex-direction:column;gap:6px}
+.item{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 0;background:var(--panel);border-radius:10px;border-left:4px solid var(--c);min-height:56px;width:100%;text-align:left}
+.item:active{background:var(--panel2)}
+.ico,.mi{flex:none;display:grid;place-items:center;color:#eceef0;box-shadow:inset 0 3px 0 var(--rc);border-radius:5px;padding:0;background:radial-gradient(rgba(255,255,255,.07) .8px,transparent .9px) 0 0/4px 4px,linear-gradient(180deg,color-mix(in srgb,var(--rc) 55%,#14171c),color-mix(in srgb,var(--rc) 14%,#14171c))}
+.ico{width:40px;height:40px;margin-left:8px}
+.ico svg{width:24px;height:24px}
+.meta{flex:1;min-width:0}
+.nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm mark{background:color-mix(in srgb,var(--print) 35%,transparent);color:inherit;border-radius:3px}
+.sub{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{flex:none;text-align:right}
+.badge .v{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 7px;border-radius:6px;background:var(--c);color:#111}
+.badge .q{font-size:12.5px;color:var(--text);margin-top:3px;font-weight:600}
+.empty{padding:30px 10px;text-align:center;color:var(--muted)}
+.sec-h{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--text);margin:16px 2px 4px;display:grid;grid-template-columns:10px 1fr;column-gap:7px;align-items:center}
+.sec-h i{width:10px;height:10px;border-radius:2px;background:var(--c)}
+.sec-h small{grid-column:2;font-size:12.5px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);margin-top:1px}
+/* FOB tree */
+.summary{display:flex;gap:8px;margin:10px 0 2px;flex-wrap:wrap}
+.summary{display:flex;gap:8px;margin:10px 0 2px}
+.summary small{display:block;color:var(--muted);font-size:12px}
+.summary b{font-size:17px}
+.station{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:16px 2px 6px}
+.up{background:var(--panel);border-radius:12px;padding:10px 10px 4px;margin-bottom:8px}
+.up-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.up-h b{font-size:15px}
+.up-h span{font-size:12.5px;color:var(--muted)}
+.tier{position:relative;display:flex;gap:10px;padding:0 0 10px 0}
+.tier:before{content:"";position:absolute;left:17px;top:34px;bottom:0;width:2px;background:var(--line)}
+.tier:last-child:before{display:none}
+.node{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid #4b5563;display:grid;place-items:center;font-weight:800;font-size:12px;background:var(--bg);position:relative;z-index:1}
+.tier.next .node{border-color:var(--keep);box-shadow:0 0 0 3px color-mix(in srgb,var(--keep) 25%,transparent)}
+.tier.done .node{background:#2a2f37;border-color:#2a2f37;color:var(--muted)}
+.tier.done .node:after{content:"✓";position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:var(--sell);color:#111;font-size:10px;display:grid;place-items:center}
+.tbody{flex:1;min-width:0;padding-top:2px}
+.tline{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.tline .eff{font-weight:600}
+.tline .cash{color:var(--muted);white-space:nowrap}
+.tier.done .tline,.tier.done .need{text-decoration:line-through;opacity:.45}
+.need{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.ichip{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 4px;border-radius:8px;background:var(--panel2);font-size:12.5px;border:1px solid var(--line)}
+.ichip .mi{width:24px;height:24px;box-shadow:inset 0 2px 0 var(--rc);border-radius:4px}
+.ichip .mi svg{width:16px;height:16px;min-width:16px;display:block}
+.ico svg{display:block}
+.ichip b{font-weight:700}
+.flag{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;border:1px solid #4b5563;color:var(--muted);margin-left:4px;text-decoration:none;display:inline-block}
+.tnote{font-size:12px;color:var(--muted);margin-top:4px}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;opacity:0;pointer-events:none;transition:opacity .15s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--panel);border-radius:16px 16px 0 0;max-height:82vh;overflow:auto;transform:translateY(100%);transition:transform .2s ease;padding:8px 16px calc(76px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto;border-top:1px solid var(--line)}
+.sheet.on{transform:none}
+.grab{width:40px;height:4px;border-radius:2px;background:#4b5563;margin:2px auto 10px}
+.sh-h{display:flex;gap:12px;align-items:center}
+.sh-h .ico{margin:0;width:48px;height:48px}
+.sh-h .ico svg{width:28px;height:28px}
+.sh-h h2{margin:0;font-size:18px}
+.sh-h .sub{white-space:normal}
+.verdict{margin:12px 0 4px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.verdict .vt{font-weight:800;color:var(--c);font-size:13px;letter-spacing:.4px}
+.verdict .keep{font-size:20px;font-weight:800;margin:2px 0}
+.verdict ul{margin:4px 0 0;padding-left:18px;font-size:13.5px;color:#cfd3d8}
+.verdict li{margin:1px 0}
+.sh-sec{margin-top:14px}
+.sh-sec h3{margin:0 0 6px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}
+.row.done{opacity:.45;text-decoration:line-through}
+.row .r{white-space:nowrap;font-weight:700}
+.row .tag{font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:4px;background:var(--keep);color:#111;margin-left:6px;text-decoration:none}
+.rec{font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:0}
+.rec b{font-weight:600}
+.rec small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.rec em{font-style:normal;color:var(--print);font-weight:700}
+.more{margin-top:6px;font-size:13px;color:var(--r-r);font-weight:600}
+.foot{margin-top:22px;font-size:12px;color:var(--muted);line-height:1.5}
+.foot a{color:var(--r-r)}
+.btn{padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-weight:600}
+/* desktop hover tooltip */
+.tip{position:fixed;z-index:50;width:340px;max-height:70vh;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:none;display:none;font-size:13px}
+.tip .sh-sec{margin-top:10px}
+.results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--panel2);border:1px solid #3a414b;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6);max-height:60vh;overflow:auto;z-index:30;padding:4px}
+.res{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px;border-radius:8px}
+.res:active,.res.sel{background:#2a2f37}
+.res .ico{margin:0;width:32px;height:32px}
+.res .ico svg{width:18px;height:18px}
+.res .meta .nm{font-size:14.5px}
+.kind{flex:none;font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:2px 6px;border-radius:5px;background:#3a414b;color:var(--text)}
+.res-n{font-size:12px;color:var(--muted);padding:6px 8px 4px}
+@keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--print)}100%{box-shadow:0 0 0 3px transparent}}
+.flash{animation:flash 1.8s ease-out}
+.up.craft{padding:10px}
+.craft-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.craft-h .ico{margin:0}
+.craft-h .nm{white-space:normal;text-align:left}
+.craft-h .sub{white-space:normal;overflow:visible;display:flex;align-items:center;flex-wrap:wrap;gap:4px 0}
+.ico.gear{--rc:#8b929c;background:linear-gradient(180deg,#4a5059,#262a31)}
+.ext{color:var(--r-r);display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;border:1px solid var(--line);margin-left:8px;vertical-align:middle;flex:none}
+.ext svg{width:15px;height:15px;display:block}
+.ext:active{background:var(--panel2)}
+.codex{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:var(--r-r);font-size:13.5px;font-weight:600;text-decoration:none}
+.codex svg{width:15px;height:15px}
+.io{margin:18px 2px 0;font-size:13px;color:var(--muted)}
+.io summary{cursor:pointer;list-style:none;padding:6px 0;opacity:.7}
+.io summary::-webkit-details-marker{display:none}
+.io[open] summary{opacity:1}
+.codebox{flex:1;min-width:0;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:600 15px ui-monospace,Menlo,monospace;letter-spacing:1px;outline:none}
+.mi.rsc{background:linear-gradient(180deg,#4a5059,#262a31);box-shadow:inset 0 2px 0 #8b929c}
+.where{margin:0;padding-left:18px;font-size:14px;line-height:1.5}
+.grid{display:inline-block;min-width:26px;text-align:center;font:700 11.5px ui-monospace,Menlo,monospace;padding:1px 4px;margin-right:7px;border-radius:4px;background:#2a2f37;color:#aab1ba;vertical-align:1px}
+.slots{font-size:.68em;font-weight:500;color:var(--muted)}
+.grid.x01{color:#ff5a5f}
+.grid.tL{color:#5b9cf0}.grid.tM{color:#4cc35e}.grid.tH{color:#e8c547}.grid.tC{color:#f08a34}.grid.tX{color:#ff5a5f}
+.tlegend{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.tlegend .grid{font-size:10px;margin:0;opacity:.9}
+.spots{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px}.spot{white-space:nowrap}
+.rfind{font-size:12px;color:var(--muted);margin-top:2px}
+.cont{font-size:12.5px;color:var(--muted);margin:-2px 0 6px}
+.needs{color:var(--hold);font-weight:700}
+.row.link{width:100%;text-align:left;cursor:pointer}
+.row.link span:first-child{text-decoration:underline;text-decoration-color:#4b5563;text-underline-offset:3px}
+.row.link.done span:first-child{text-decoration:line-through}
+.reclink{font-weight:600;text-decoration:underline;text-decoration-color:#4b5563;text-underline-offset:3px}
+.backbtn{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;display:flex;align-items:center;gap:4px;height:40px;padding:0 15px 0 10px;border-radius:20px;background:rgba(30,34,40,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid #3a414b;color:var(--text);font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.backbtn svg{width:18px;height:18px;color:var(--print)}
+.backbtn:active{background:#2a2f37}
+.summary{align-items:stretch}
+.sbox{flex:1;min-width:0;text-align:left;background:var(--panel);border-radius:10px;padding:9px 11px;border:1px solid transparent}
+.sbox small{display:block;color:var(--muted);font-size:12px}
+.sbox b{display:block;font-size:16px;margin-bottom:6px}
+.sbox b:last-of-type{margin-bottom:0}
+.sugg{flex:2;border-color:color-mix(in srgb,var(--print) 30%,transparent)}
+.sugg b{font-size:14.5px;color:var(--print);line-height:1.25;margin:1px 0 3px}
+.sugg span{display:block;font-size:12px;color:var(--muted);line-height:1.3}
+.sugg{position:relative}
+.info{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;border:1px solid #4b5563;color:var(--muted);font:italic 700 12px/18px Georgia,serif;text-align:center}
+.stip{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:25;background:var(--panel2);border:1px solid #3a414b;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.4;color:var(--text);box-shadow:0 10px 24px rgba(0,0,0,.55);text-align:left}
+.craft-h .meta{flex:1;min-width:0}
+.learn{flex:none;width:34px;height:34px;border-radius:50%;border:2px solid #4b5563;color:transparent;display:grid;place-items:center;align-self:flex-start}
+.learn svg{width:18px;height:18px}
+.learn.on{background:var(--sell);border-color:var(--sell);color:#111}
+.learn:disabled{opacity:.55}
+.up.craft.learnt{box-shadow:inset 3px 0 0 var(--sell)}
+.lrn{color:var(--sell);font-weight:800;margin-left:5px}
+#craftCats{margin:10px 0 0}
+.seg.stat{margin:8px 0 2px;padding:2px;border-radius:9px}
+.seg.stat button{padding:6px 4px;font-size:13px;border-radius:7px}
+.seg.stat b{color:var(--text);margin-left:3px}
+.seg.stat button:not(.on) b{color:var(--muted);font-weight:600}
+.seg{display:flex;background:var(--panel);border-radius:10px;padding:3px;gap:3px;margin:10px 0 0}
+.seg button{flex:1;padding:8px;border-radius:8px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--panel2);color:var(--text)}
+.cat-h{display:flex;align-items:baseline;gap:6px;margin:14px 4px 6px;font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.cat-h b{font-weight:600;letter-spacing:0;color:#5d6570}
+#craftList .cat-h:first-child{margin-top:8px}
+.kreq{font-size:14px;font-weight:600;margin:3px 0 1px;color:var(--text)}
+.sugg{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+.sugg small{line-height:20px;padding-right:26px}
+.sugg .info{top:9px}
+.sugg b{margin-top:6px}
+.sugg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>MW4 DMZ <span>Quartermaster</span></h1>
+      <div class="tabs"><button id="tFob">FOB</button><button id="tCraft">Crafting</button><button id="tStash" class="on">Loot</button></div>
+    </div>
+    <div class="search"><input id="q" type="search" placeholder="Search loot, recipes, upgrades…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear">×</button>
+      <div class="results hide" id="results"></div></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section id="stashView">
+    <div class="list" id="list"></div>
+  </section>
+
+  <section id="craftView" class="hide">
+        <div class="seg" id="craftSeg"><button data-cv="recipes" class="on">3D Printer</button><button data-cv="manuals">Gunsmith</button></div>
+        <div class="chips" id="craftCats"></div>
+        <div class="seg stat" id="craftChips"></div>
+        <div class="list" id="craftList"></div>
+  </section>
+
+  <section id="fobView" class="hide">
+    <div class="summary" id="summary"></div>
+    <div id="tree"></div>
+    <details class="io">
+      <summary>Export - Import - Reset</summary>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="code" class="codebox" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Paste a code"><button class="btn" id="copyBtn">Copy</button><button class="btn" id="loadBtn">Load</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="saveBtn">Save file</button><button class="btn" id="fileBtn">Load file</button><input type="file" id="fileIn" accept=".txt,text/plain" class="hide"></div>
+      <div class="tnote" id="codeMsg"></div>
+      <div style="margin-top:6px;display:flex;gap:8px" class="hide" id="loadAsk"><button class="btn" id="loadYes" style="border-color:var(--keep);color:var(--keep)">Overwrite progress</button><button class="btn" id="loadNo">Cancel</button></div>
+      <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="resetBtn">Reset all</button><button class="btn hide" id="resetYes" style="border-color:var(--keep);color:var(--keep)">Confirm reset</button></div>
+    </details>
+  </section>
+
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<div class="tip" id="tip"></div>
+<button class="backbtn hide" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Back</span></button>
+
+<script>
+"use strict";
+/* ---------- icons ---------- */
+const ICONS={
+  bottle:'<path d="M10 2.5h4v3l1.5 2.5v12a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 8.5 20V8L10 5.5z"/><path d="M8.5 12h7v6h-7z" fill="currentColor" fill-opacity=".35"/>',
+  radio:'<rect x="7" y="7" width="10" height="14" rx="1.5"/><path d="M14 7V2.5"/><rect x="9" y="9.5" width="6" height="4" rx=".5" fill="currentColor" fill-opacity=".35"/><path d="M9.5 16.5h5M9.5 18.5h5"/>',
+  coil:'<ellipse cx="11" cy="11" rx="7.5" ry="5.5"/><ellipse cx="11" cy="11" rx="4.5" ry="3"/><path d="M16 15.5l2 5M18 14.5l3.5 4"/>',
+  device:'<path d="M3 15l2-6h14l2 6v4H3z"/><path d="M3 15h18M7 12h6"/><circle cx="17" cy="12" r="1" fill="currentColor"/>',
+  shavings:'<path d="M4 18c3-1 4-4 3-7s1-6 4-6"/><path d="M9 20c3-1 5-4 4-7s1-6 4-7"/><path d="M14 21c3-1 5-3 5-6"/>',
+  notes:'<path d="M6 3h12v18H6z"/><path d="M6 7h12M9 3v2M12 3v2M15 3v2M9 11h6M9 14h6M9 17h4"/>',
+  clamp:'<path d="M16 4H7v16h9"/><path d="M16 4v4M16 16v4M11 12h9M20 9v6"/>',
+  vials:'<rect x="3" y="14" width="18" height="6" rx="1"/><path d="M6 14V5h2v9M11 14V5h2v9M16 14V5h2v9"/><path d="M6 10h2M11 9h2M16 11h2"/>',
+  chip:'<rect x="7" y="7" width="10" height="10" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" fill="currentColor" fill-opacity=".35"/><path d="M10 7V4M14 7V4M10 20v-3M14 20v-3M7 10H4M7 14H4M20 10h-3M20 14h-3"/>',
+  rope:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/><path d="M20 12c1 3 .5 6-1.5 8"/>',
+  flame:'<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-2 1-4 2-5 0 2 1 3 2 3 0-4 1-6 2-9z"/><path d="M12 20a2.5 2.5 0 0 1-2.5-2.5c0-1.5 1.5-3 2.5-4.5 1 1.5 2.5 3 2.5 4.5A2.5 2.5 0 0 1 12 20z" fill="currentColor" fill-opacity=".35"/>',
+  cloth:'<rect x="4" y="5" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="15" width="16" height="4" rx="1"/>',
+  pcb:'<rect x="3" y="5" width="18" height="14" rx="1"/><rect x="9" y="9" width="6" height="6" fill="currentColor" fill-opacity=".35"/><path d="M3 9h3l2 2M21 15h-3l-2-2M6 19v-3M18 5v3"/>',
+  rod:'<path d="M5 19 19 5"/><path d="m3 17 4 4M17 3l4 4"/>',
+  ingot:'<path d="M2.5 18 6 10h12l3.5 8z"/><path d="M8.5 10 10 6h4l1.5 4"/>',
+  bars:'<path d="M3 20l2-5h6l2 5zM11 20l2-5h6l2 5z"/><path d="M7 15l2-5h6l2 5"/>',
+  plate:'<rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/><circle cx="16.5" cy="7.5" r="1" fill="currentColor"/><circle cx="7.5" cy="16.5" r="1" fill="currentColor"/><circle cx="16.5" cy="16.5" r="1" fill="currentColor"/><path d="M9.5 12h5"/>',
+  weave:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12 12 4M4 20 20 4M12 20l8-8"/>',
+  comms:'<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M8 9V3M6 5l2-2 2 2"/><circle cx="15" cy="14.5" r="2.5"/><path d="M7 13h3M7 16h3"/>',
+  layers:'<path d="M12 4 21 8.5 12 13 3 8.5z" fill="currentColor" fill-opacity=".25"/><path d="m3 12.5 9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>',
+  power:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M13 7.5 9.5 12.5h4L11 16.5"/>',
+  jerrycan:'<path d="M6 6h9l3 3v11H6z"/><path d="M9 6V3.5h3V6"/><rect x="8.5" y="12" width="7" height="5" fill="currentColor" fill-opacity=".35"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  dynamite:'<rect x="4" y="10" width="4" height="10" rx="1"/><rect x="10" y="10" width="4" height="10" rx="1"/><rect x="16" y="10" width="4" height="10" rx="1"/><path d="M12 10c0-3 2-5 5-5"/><path d="M18.5 2.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" fill="currentColor"/>',
+  beaker:'<path d="M7 3h10M8 3v5l-4 11a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L16 8V3"/><circle cx="10" cy="16" r="1.2"/><circle cx="14" cy="13.5" r="1"/><circle cx="13.5" cy="18" r=".8"/>',
+  honeycomb:'<path d="M8 4h4l2 3.5-2 3.5H8L6 7.5zM14 7.5h4l2 3.5-2 3.5h-4l-2-3.5zM8 11h4l2 3.5-2 3.5H8l-2-3.5z"/>',
+  lattice:'<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/><path d="M8 5.3v9M16 5.3v9M4 12l8 4.5 8-4.5" opacity=".55"/>',
+  milradio:'<rect x="3" y="8" width="18" height="11" rx="1"/><path d="M17 8V2"/><rect x="5.5" y="10.5" width="6" height="3" fill="currentColor" fill-opacity=".35"/><circle cx="16" cy="14" r="2.2"/><path d="M5.5 16.5h6"/>',
+  vial:'<path d="M9.5 3h5M10.5 3v14a1.5 1.5 0 0 0 3 0V3"/><path d="M10.5 10h3v7a1.5 1.5 0 0 1-3 0z" fill="currentColor" fill-opacity=".45"/><path d="M6 21h12"/>',
+  swatch:'<path d="M5 4h14v12l-3 4H5z"/><path d="M5 9c3 2 6-2 9 0s4 1 5 0M5 13c3 2 6-2 9 0s4 1 5 0"/>',
+  notebook:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8.5 3v18M11.5 8h5M11.5 11h5"/>',
+  map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/><path d="M5 12l2-1 1 2M17 9l2 2"/>',
+  folderPaw:'<path d="M3 6.5h6l2 2h10v10.5H3z"/><circle cx="12" cy="15.5" r="1.8"/><circle cx="9.3" cy="12.8" r="1"/><circle cx="12" cy="11.8" r="1"/><circle cx="14.7" cy="12.8" r="1"/>',
+  folderPerson:'<path d="M3 6.5h6l2 2h10v10.5H3z"/><circle cx="12" cy="12.3" r="1.8"/><path d="M8.8 17.5c.6-2.3 5.8-2.3 6.4 0"/>',
+  moneybag:'<path d="M9 3h6l-1.5 3h-3z"/><path d="M10.5 6C6 8 4 12 4 15a6 6 0 0 0 6 6h4a6 6 0 0 0 6-6c0-3-2-7-6.5-9"/><path d="M12 10v8M14 11.5c-1-1-4-1-4 .8s4 1 4 3-3 1.8-4 .8"/>',
+  vhs:'<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><circle cx="8" cy="12" r="2.2"/><circle cx="16" cy="12" r="2.2"/><path d="M10.2 12h3.6M6 18v-2h12v2"/>',
+  hdd:'<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="10" r="1" fill="currentColor"/><path d="m12 10 3.5 7"/><circle cx="7" cy="18" r=".8" fill="currentColor"/>',
+  medal:'<circle cx="12" cy="15" r="5"/><path d="M8.5 3 11 10M15.5 3 13 10"/><path d="m12 12.5.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z" fill="currentColor"/>',
+  star:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor" fill-opacity=".3"/><path d="M8 21h8"/>',
+  floppy:'<path d="M4 4h13l3 3v13H4z"/><path d="M8 4v5h7V4"/><rect x="7" y="13" width="10" height="7" fill="currentColor" fill-opacity=".3"/>',
+  canister:'<rect x="7" y="6" width="10" height="13" rx="2"/><path d="M6 4h12v2H6zM6 19h12v2H6z"/><rect x="9.5" y="9" width="5" height="7" rx="1" fill="currentColor" fill-opacity=".45"/>',
+  pup:'<path d="M7 20v-6c0-2 1-3 2-4l-1-4 3 2h2l3-2-1 4c1 1 2 2 2 4v6"/><path d="M5 20h14"/><circle cx="10.5" cy="11" r=".8" fill="currentColor"/><circle cx="13.5" cy="11" r=".8" fill="currentColor"/>',
+  target:'<path d="M5 3h10l4 4v14H5z"/><circle cx="12" cy="13" r="4"/><path d="M12 7.5v2M12 16.5v2M6.5 13h2M15.5 13h2"/>',
+  anchor:'<circle cx="12" cy="5" r="2"/><path d="M12 7v14M8 10h8M4 14c0 4 4 7 8 7s8-3 8-7M4 14l-1.5 1.5M20 14l1.5 1.5"/>',
+  clipboard:'<rect x="5" y="4" width="14" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="1" fill="currentColor" fill-opacity=".35"/><path d="M8 10h8M8 13h8M8 16h5"/>',
+  list:'<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h2.5M14 15l3 3M17 15l-3 3"/>',
+  isotope:'<rect x="9" y="4" width="6" height="16" rx="3"/><path d="M7.5 4h9M7.5 20h9"/><path d="M12 8v8" stroke-width="3" opacity=".55"/>',
+  skull:'<path d="M12 3a7 7 0 0 0-7 7c0 2.5 1.2 4 3 5v3h8v-3c1.8-1 3-2.5 3-5a7 7 0 0 0-7-7z"/><circle cx="9.5" cy="11" r="1.5" fill="currentColor"/><circle cx="14.5" cy="11" r="1.5" fill="currentColor"/><path d="M10.5 18v3M13.5 18v3"/>',
+  ledger:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><rect x="10" y="9" width="5" height="4" rx=".5"/><path d="M11 9V7.8a1.5 1.5 0 0 1 3 0V9"/>',
+  cube:'<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/>',
+  bomb:'<circle cx="10" cy="14" r="6"/><path d="m14.5 9.5 2.5-2.5M19 4l1-1M20.5 6.5h1.2M17.5 2.3v1.2"/>',
+  fabric:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12 12 4M4 20 20 4M12 20l8-8"/>',
+  flask:'<path d="M9 3h6M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/><path d="M7.5 15h9"/>'
+};
+ICONS.res_syn='<path d="M6 3h9l4 4v14H6z" fill="currentColor" fill-opacity=".25"/><path d="M15 3v4h4"/>';
+ICONS.res_ele='<rect x="7" y="7" width="10" height="10" rx="1"/><rect x="10" y="10" width="4" height="4" fill="currentColor"/><path d="M10 7V4M14 7V4M10 20v-3M14 20v-3M7 10H4M7 14H4M20 10h-3M20 14h-3"/>';
+ICONS.res_che='<path d="M9 3h6M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/><path d="M7 15h10l2 4.5H5z" fill="currentColor" fill-opacity=".35"/>';
+ICONS.res_met='<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="3.5"/>';
+ICONS.g_vest='<path d="M8 3h2c0 2 4 2 4 0h2l3 3v14H5V6z"/><path d="M8 10h8v6H8z" fill="currentColor" fill-opacity=".3"/>';
+ICONS.g_backpack='<path d="M9 5a3 3 0 0 1 6 0"/><rect x="5" y="5" width="14" height="16" rx="3"/><rect x="8" y="12" width="8" height="5" rx="1"/>';
+ICONS.g_grenade='<ellipse cx="11" cy="15" rx="6" ry="6.5"/><path d="M9 8.5V6h4v2.5M13 6h3l2 2"/><path d="M8 13h6M8 16.5h6" opacity=".6"/>';
+ICONS.g_mine='<path d="M4 17h16l-2-5H6z"/><path d="M8 12V9h8v3M12 9V6"/><path d="M4 20h16"/>';
+ICONS.g_drone='<circle cx="5.5" cy="6.5" r="2.5"/><circle cx="18.5" cy="6.5" r="2.5"/><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M7.5 8.5l3 3M16.5 8.5l-3 3M7.5 15.5l3-3M16.5 15.5l-3-3"/><rect x="10" y="10" width="4" height="4" rx="1" fill="currentColor"/>';
+ICONS.g_crate='<rect x="3" y="7" width="18" height="13" rx="1"/><path d="M3 11h18M10 7v4M14 7v4"/>';
+ICONS.g_med='<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M12 10.5v6M9 13.5h6"/>';
+ICONS.g_syringe='<path d="m14 4 6 6M17 7l-9 9-3-3 9-9M5 13l-2 2 4 4 2-2M4 18l-1.5 1.5M10 9l2 2M12 7l2 2"/>';
+ICONS.g_pill='<path d="M8.5 19.5a4 4 0 0 1-5.7-5.7l7.5-7.5a4 4 0 0 1 5.7 5.7z"/><path d="m6.5 10 7.5 7.5" /><path d="M19 4v4M17 6h4"/>';
+ICONS.g_gasmask='<path d="M6 8c0-3 3-5 6-5s6 2 6 5v5c0 4-3 7-6 7s-6-3-6-7z"/><circle cx="9.5" cy="10" r="1.8"/><circle cx="14.5" cy="10" r="1.8"/><circle cx="12" cy="16.5" r="2"/>';
+ICONS.g_nvg='<circle cx="8" cy="13" r="3.5"/><circle cx="16" cy="13" r="3.5"/><path d="M11.5 13h1M10 9.5V7h4v2.5"/>';
+ICONS.g_parachute='<path d="M3 11a9 7 0 0 1 18 0z"/><path d="M3 11l9 9 9-9M8 11l4 9 4-9"/>';
+ICONS.g_keycard='<rect x="3" y="6" width="18" height="12" rx="2"/><rect x="6" y="9" width="5" height="4" fill="currentColor" fill-opacity=".35"/><path d="M14 10h4M14 13h3"/>';
+ICONS.g_charge='<rect x="4" y="8" width="16" height="10" rx="1"/><path d="M8 8v10M16 8v10"/><circle cx="12" cy="13" r="1.5" fill="currentColor"/><path d="M12 8V5l3-2"/>';
+ICONS.g_radar='<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-4"/><circle cx="12" cy="12" r="1" fill="currentColor"/>';
+ICONS.g_turret='<path d="M6 20h12M9 20l3-6 3 6"/><rect x="7" y="8" width="7" height="6" rx="1"/><path d="M14 10h7"/>';
+ICONS.g_knife='<path d="m4 20 6-6M10 14l8-10c1 3 0 7-4 10z"/>';
+ICONS.g_shield='<path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z"/>';
+ICONS.g_plane='<path d="M21 4 3 11l7 2 2 7z"/><path d="m10 13 4-4"/>';
+ICONS.g_decoy='<circle cx="12" cy="6" r="3"/><path d="M6 21v-4a6 6 0 0 1 12 0v4"/>';
+ICONS.g_pistol='<path d="M3 8h16v4h-7l-1 3H8l-1 4H4l1-7H3z"/>';
+ICONS.g_pulse='<path d="M3 12h4l2-5 4 10 2-5h6"/>';
+ICONS.g_wire='<path d="M3 12c2-3 4 3 6 0s4 3 6 0 4 3 6 0"/><path d="M5 6v12M19 6v12"/>';
+ICONS.g_can='<rect x="7" y="4" width="10" height="17" rx="2"/><path d="M9 4V3h6v1M7 9h10"/><path d="M13 11l-2 3h2l-2 3"/>';
+const RECIPE_RAR={"Concussion Grenade":"C","1-Plate Armor Vest":"U","2-Plate Armor Vest":"R","2-Plate Ballistic Gel Vest":"E","2-Plate Helmet Armor Vest":"E","3-Plate Armor Vest":"L","3-Plate Ballistic Gel Vest":"X","3-Plate Helmet Armor Vest":"X","3.5-Plate Armor Vest":"X","Tempered Armor Vest":"X","Argonaut Armor":"X","Small Backpack":"U","Medium Backpack":"R","Medium Scavenger Backpack":"E","Medium Weapon Backpack":"E","Small Secure Backpack":"E","Large Backpack":"L","Large Scavenger Backpack":"L","Medium Secure Backpack":"L","Large Secure Backpack":"X","Secure Scavenger Backpack":"X","Decoy Grenade":"C","Flash":"C","Screamer Mine":"C","Shock Stick":"C","Smoke Grenade":"C","Snapshot Grenade":"C","Stun Grenade":"C","Heartbeat Sensor":"U","Stim":"U","Spotter Scope":"R","Energy Drink":"C","Bandage":"U","Pain Killers":"U","Sedative Inhaler":"U","Radiation Blockers":"R","Smelling Salts":"R","Medkit":"E","Self-Revive Kit":"L","Door Breacher Charge":"X","UAV":"E","Frag Grenade":"C","Semtex":"C","C4":"C","Claymore":"C","Proximity Mine":"C","Molotov Cocktail":"C","Thermite":"C","Throwing Knife":"U","Drill Charge":"U","Trip Wire":"U","Zip Gun":"C","Ammo Box":"U","Armor Box":"R","Consumable Box":"E","Hazmat Box":"L","Medical Box":"L","Utility Box":"X","Survivor Box":"X","Inflatable Decoy":"U","Portable Radar":"U","Razor Wire Trap":"U","Riot Shield":"U","Smoke Wall":"U","Trophy System":"R","DDOS":"R","Defibrillator":"R","Revive Pistol":"L","Rebreather":"U","Seeker Drone":"U","Recon Drone":"R","Combat Drone":"E","Advanced UAV":"L","Care Package":"R","Bomb Glider":"E","Bombing Run":"E","Artillery Beacon":"L","Impact Warhead":"L","Fulton Drop Marker":"X","Railgun Sentry":"L","SAM Airburst Turret":"R","Crossfire":"X","Gas Mask":"R","Durable Gas Mask":"E","Night Vision Goggles":"R","Weak Night Vision Goggles":"U","Elite Night Vision Goggles":"L","Parachute":"L","Disposable Parachute":"R","Encodable Blank Keycard":"E","Staff Emergency Exfil Keycard":"E"};
+const recipeCol=r=>RECIPE_RAR[r.name]?`var(${RAR[RECIPE_RAR[r.name]][1]})`:"var(--r-n)";
+const WHERE={"Biomaterials":[["Hospitals"],["Chemical lockers"],["Cheongun Village Fire Station, upstairs storage","F4","L"],["Chang-san chemical lockers","B5","C"],["Mirae General Hospital","F5","L"],["Oamsik Turtle Island","I5","L"],["Tong-il Village","D4"]],"Control Units":[["Computers"],["Tech bags"],["Cheongun Village police station cache","F4","L"],["Songdo Pier computer","I7"]],"Detonators":[["Military and industrial areas"],["Toolboxes, chemical storage"],["Chang-san Air Base","B5","C"],["Cheongun Outskirts","E4","L"]],"Electronic Sensors":[["Tech bags"],["Commercial areas"],["Air Base bunker IT bag","B5","X"],["Wolves Stadium computer","G7","M"],["Cheongun Village computer","F4","L"],["Heavenly Luck Casino duffel","F4","H"],["Imjin Farmland shelf, UAV hatch","D7","M"]],"Reactive Metals":[["Industrial areas"],["Toolboxes"],["Chang-san military locker","B5","C"]],"Regional Combat Notes":[["Care packages"],["Compound Bravo safe","F8"],["South Korean Border Zone cash register","I4","M"],["Special Delivery reward crate"],["Signal Breaker, Deadtown","B7","M"]],"Rigid Synthetics":[["Residential areas"],["Civilian duffel bags"],["Luggage, hidden caches"],["Imjin Farmland","D7","M"],["NuriGO Mall","H6","H"]],"Binding Catalyst":[["Mirae General Hospital","F5","L"],["Medical tents"],["First aid kits"],["Tong-il Village chemical storage","D4"],["Chang-san chemical storage","B5","C"],["Air Base bunker first aid kit","B5","X"],["Namjin Riverside medicine cabinet","E9"]],"CPU":[["Computers"],["Netshin Tech Complex server rooms","G6","X"],["Cheonwang Peak Array server rooms","F6","M"],["Deadtown hillside buildings","B7","M"],["Mirae PC cache","F5","L"],["Cheongun Village police station cache","F4","L"],["Compound Charlie computer","D5"]],"High-Tenacity Fibers":[["Weapons lockers"],["Chang-san armory","B5","X"],["Chang-san barracks","B5","C"],["La Grande Vie rooftop","I7"],["Namjin Riverside house shelf","E9"]],"Nitro Compounds":[["NuriGO Mall DRC lab","H6","H"],["Citadel Prison Yard chemical buildings","C3","H"],["Imjin Farmland storage tents","D7","M"]],"Nylon Cloth":[["Citadel main building wings","B3","C"],["Deadtown underground holding area","B7","M"],["Heavenly Luck Casino, Mujin Nightclub","F4","H"],["Imjin Farmland duffel","D7","M"]],"Printed Circuit Board":[["Reactor and substations","I4","H"],["Air Base bunker shelf","B5","X"],["Loose on the ground"]],"Stock Rod":[["Imjin rice mill","D8","M"],["Hajin construction zone","H7","C"],{"t":"Namjin Riverside","at":[["","E9"],["","D8"]]},["Compound Alpha tool box","E7"]],"Structural Alloy":[["Chang-san Air Base hangars, repair bays","B5","C"],["Bubun Yard","A4"]],"Alloyed Plating":[["Revolution Dam military lockers","D2"],["Chang-san hangars, repair bays","B5","C"],["Bubun Yard","A4"]],"Ballistic Fabric":[["Chang-san armory","B5","X"],["Chang-san barracks","B5","C"],["La Grande Vie rooftop","I7"]],"Comms Module":[["Crashed large drone Side Op (dynamic)"],["Eastern Deadtown light-blue buildings, upstairs","B7","M"],["Netshin Tech Complex server rooms","G6","X"],["Cheonwang Peak Array server rooms","F6","M"]],"Nylon Laminate":[["Citadel main building wings","B3","C"],["Deadtown underground holding area","B7","M"],["Heavenly Luck Casino, Mujin Nightclub","F4","H"]],"Power Regulator":[["Cheonwang Peak Array server blade","F6","M"],["Reactor 02 chemical storage","I4","H"],["Haneul Nuclear Reactor, substations","I4","H"]],"Stabilized Reagents":[["Mirae General Hospital","F5","L"],["Medical tents"]],"Turned Components":[["Imjin rice mill","D8","M"],["Hajin construction zone","H7","C"],{"t":"Namjin Riverside","at":[["","E9"],["","D8"]]},["North Korean Wilderness industrial locker","C4"]],"Volatile Explosives":[["NuriGO Mall DRC lab","H6","H"],["Citadel Prison Yard chemical buildings","C3","H"],["Imjin Farmland storage tents","D7","M"],["Oamsik Turtle Island hidden cache","I5","L"]],"Experimental Compounds":[["Commanders (occasional)"],["Imjin road, loose"]],"Military Composites":[["Colossus (enemy)"]],"Nano-Structured Alloy":[["Tank (enemy)"]],"Prototype RF Module":[["Deathstalker wreck"]],"Specter Fabric Sample":[["Captain (boss)","X01"]],"Ballistic Flight Logs":[["Casino security office counter (Op. Silent Ledger)","F4","H"],["Mechanic's Shack footlocker, Cheongun Village (key)","F5","L"],["Compound Alpha upper-floor safe","E7"]],"Infantry Invasion Plans":[["Compound Charlie safe","D5"],["Compound Delta safe","H5"],["Signal Breaker, Deadtown","B7","M"],["Air Base chemical storage, care package","B5","C"]],"Animal Trial Records: R-4":[["","X01"]],"Cash Bag":[["Casino vault, Op. Silent Ledger (12 bags)","F4","H"]],"Degraded Execution Footage":[["Compound Charlie safe","D5"],["Special Delivery reward crate"]],"Encrypted Archive":[["Heavenly Luck Casino storage, counting room (key)","F4","H"],["Mirae Electrical Room, B2 (key)","F5","L"],["Cheonwang Peak Array safes, servers","F6","M"]],"Nuclear Program Files":[["Compound safes"],["Casino counting-room caches","F4","H"],["Casino basement vault (Op. Silent Ledger)","F4","H"]],"Gilded Maritime Relic":[["","X01"]],"Human Trial Records: R-18":[["Bio Lab, underwater route","X01"],["Main Warehouse, Superintendent's Office (key)","X01"]],"W.M.D Manifest":[["Compound Alpha safe (Signal Breaker)","E7"]],"Gilded Medal of Absolute Loyalty":[["Admin Offices, Executive Room (key)","X01"]],"Sanctioned Assassination List":[{"t":"Hanex branch vault shelves (vault card)","at":[["Cheongun Village","F4","L"],["The Grid","G6","C"],["Wolves Stadium","G7","M"],["River Heights","G8","M"],["Songdo Wharf","I7","L"]]},["Military areas"]],"Gold Bar":[["Cheonwang Peak Array safes, servers","F6","M"],["Op. Silent Ledger reward"],["Safes across Hajin (rare)"]],"Gold Skull":[{"t":"Hanex branch vault safes (vault card)","at":[["Cheongun Village","F4","L"],["The Grid","G6","C"],["Wolves Stadium","G7","M"],["River Heights","G8","M"],["Songdo Wharf","I7","L"]]},["Safes across Hajin (rare)"]],"Cipher Code Ledger":[{"t":"Gun store lockers (key)","at":[["Songdo Wharf","I7","L"],["W. Cheongun Village","F4","L"]]}],"North Korean Bayonet":[["Marked trench between Hajin City and the Reactor"]],"Car Battery":[["Garages"],["Gas stations"]],"Alternator":[["Garages"],["Gas stations"]],"Spark Plug":[["Garages"],["Gas stations"]],"Tank Battery":[["Chang-san Air Base","B5","C"]],"Tank Water Pump":[["Fuel storage by Chang-san hangar entrances","B5","C"]],"Foreign Intelligence Targets":[["14th Political Prison, warden's office near entrance","C3","H"]],"Air Base Access Card":[["Chang-san Air Base: Admin Complex No. 2 server room","B5","C"]],"Air Base Armory Card":[["Chang-san Air Base: Chang-san Air Base armory","B5","X"]],"Air Base DRC Weapons Locker":[["Chang-san Air Base: DRC locker, secure armory deep in the bunker","B5","X"]],"Commandant Office":[["Chang-san Air Base: 2nd-floor office, Admin Complex No. 2","B5","C"]],"Field Depot":[["Chang-san Air Base: 1st-floor gear room, supply warehouse NE of clinic","B5","C"]],"Weapons Mod Workshop":[["Chang-san Air Base: Upstairs workshop, repair garage W of clinic","B5","C"]],"Supreme Leader Access Card":[["Chang-san Air Base: Supreme Leader's Bunker, deep in the base","B6","X"]],"Counting Room Vault":[["Heavenly Luck Casino: Vault behind the Cashier, casino main floor","F4","H"]],"Jin-Tae's Private Lounge":[["Heavenly Luck Casino: Upper-floor lounge, lobby elevator to penthouse","F4","H"]],"Vault Armory":[["Heavenly Luck Casino: Small armory, casino underground parking","F4","H"]],"Train Depot Storageroom":[["Cheongun Village: Basement storeroom, train station by fire dept","F4","L"]],"Mechanic's Shack":[["Cheongun Village: Standalone shack south of the clinic","F5","L"]],"Coin Mining Den Key":[["NuriGO West: Coin Mining Den, E of westernmost gas station","G6","H"]],"Jang-ui's Converted Power Room":[["NuriGO Mall: Generator room, mall bottom floor by Robo Dog course","H6","H"]],"Shopping DRC Locker":[["NuriGO Mall: DRC locker in core-gated room off Shopping Hacks lab","H6","H"]],"Downtown Branch Lobby Main":[["The Grid: Bank branch lobby","G6","C"]],"Hanex Guard Station":[["The Grid: Upper-floor guard station by the Hanex vault","G6","C"]],"Executive Arms Auction":[["The Grid: Arms-auction room, top of DBN HQ","G6","C"]],"Netshin IT Room":[["Netshin Tech Complex: High-security server room, upper floors","G6","X"]],"Netshin Security Office":[["Netshin Tech Complex: Security office","G6","X"]],"Roze's High-Rise Armory":[["Netshin Tech Complex: Upstairs offices","G6","X"]],"Lucera Suite 703 Bedroom":[["Hotel Lucera: Suite 703 bedroom","G6"]],"Gangbyeon Apartment B":[["Compound Echo: Gangbyeon Apartment B","G7"]],"Militia Arms Depot":[["Compound Echo: Lower-floor armory, Gangbyeon Apartment B","G7"]],"Police Weapon Depository":[["Wolves Stadium: Auxiliary police armory N of the police station","G7","M"]],"Shop Records Room":[["Wolves Stadium: Records room above Goh24 supermarket","G7","M"]],"Gas Station Electrical Room":[["Construction Zone: Grey metal door by the noticeboard","H7","C"]],"Old Barber Shop":[["Songdo Wharf: Barber shop beside the crab shack","I7","L"]],"Gorani's Scout Overlook":[["Imjin Farmland: Scout Overlook, via the Rice Mill roof","D8","M"]],"Imjin Mill Foreman's Office":[["Imjin Farmland: Foreman's office, rice mill 1st floor","D8","M"]],"Mill Explosives Lab":[["Imjin Farmland: Explosives lab, rice mill","D8","M"]],"Hoesik Supply Room":[["Imjin Farmland: Upstairs, southernmost office outside the Rice Mill","D8","M"]],"Haejeok Radio Station":[["Imjin Suburb: Broadcast room, white building under red mast","D6"]],"Haksan School Armory":[["Deadtown: Upstairs armory, school NE of Re-Education Center","B7","M"]],"Re-Education Center Annex":[["Deadtown: Ground-floor annex","B7","M"]],"Underground Propaganda Store Room":[["Deadtown: Store room beneath the Re-Education Center","B7","M"]],"Hospital Chemical Lab Key":[["Mirae General Hospital: Chemical lab, basement morgue","F5","L"]],"Hospital Chemical Lockers":[["Mirae General Hospital: Chemical lockers in the morgue lab","F5","L"]],"Mirae Electrical Room":[["Mirae General Hospital: B2 of NW parking garage, grey double doors","F5","L"]],"The Doctor's Command Office":[["Mirae General Hospital: Converted conference room, upper offices","F5","L"]],"Iskra's Control Room":[["Cheonwang Peak Array: Upstairs control room, broadcast building","F7","M"]],"Reactor 02 Control Room":[["Haneul Nuclear Reactor: Upper-catwalk control room, Reactor 02","H4","H"]],"Reactor DRC Locker":[["Haneul Nuclear Reactor: DRC locker in the Reactor 02 irradiated pool","I4","H"]],"Utility Maintenance Storage":[["Haneul Nuclear Reactor: Room beneath transformers by Reactor 01","H4","H"]],"The Chemist's Secure Armory":[["Haneul Nuclear Reactor: Right-hand bunker door, N reactor road by boathouse","I4","H"]],"Hazard Storehouse":[["Haneul Nuclear Reactor: White STORAGE shed S of the cooling towers","I5","H"]],"Kang's Arms Incinerator":[["14th Political Prison: Incinerator room, NW wing of the Citadel","B3","C"]],"South Block Armory":[["14th Political Prison: South Block Armory, Citadel","B3","C"]],"The Citadel East Wing":[["14th Political Prison: Citadel East Wing","B3","C"]],"The Citadel East Wing Office Key":[["14th Political Prison: East Wing office (unverified)","B3","C"]],"The Citadel Main Control Room":[["14th Political Prison: Citadel main control room","B3","C"]],"The Citadel Secondary Control Room":[["14th Political Prison: Secondary control room, security station","B3","C"]],"The Citadel South Wing":[["14th Political Prison: South Wing exterior","B3","C"]],"Prison Encampment Storage":[["14th Political Prison: Ordnance storage, SE side of the prison camp","C3","H"]],"Archive Closet":[["Data Center server rooms","X01"]],"Audit Room":[["Main Warehouse: Upper-floor corridor","X01"]],"Superintendent's Office":[["Main Warehouse: Office across the elevated platform","X01"]],"Executive Room":[["Admin Offices: 2nd floor near the statue","X01"]],"Maintenance Room":[["Production Assembly: 3rd-floor room by fenced pipework","X01"]],"Small Test Chamber":[["T.E.C.H. Lab: Small Test Chamber, T.E.C.H. Lab","X01"]],"Deep Vault 106":[["Deep Vault: Deep Vault gate and Room 106","X01"]],"Deep Vault 301":[["Deep Vault: Deep Vault gate (not consumed) and Room 301","X01"]],"Deep Vault 406":[["Deep Vault: Deep Vault gate and Room 406","X01"]],"X01 Vault DRC Locker Key":[["Deep Vault: DRC locker inside the Deep Vault","X01"]],"Encodable Blank Keycard":[["Becomes a room key at an X01 Encoder","X01"]],"Staff Emergency Exfil Keycard":[["Emergency Egress Shafts on the X01 Tac Map","X01"]],"Bank Branch Vault Access":[{"t":"Currency storage rooms in Hanex branches","at":[["Cheongun Village","F4","L"],["The Grid","G6","C"],["Wolves Stadium","G7","M"],["River Heights","G8","M"],["Songdo Wharf","I7","L"]]}],"Gun Store Weapons Locker Key":[{"t":"Gun store weapons lockers","at":[["Songdo Wharf","I7","L"],["W. Cheongun Village","F4","L"]]}],"Black Market Weapons Locker Key":[["Black market: Black market weapons locker"]],"Police Station Key":[["Police stations: Police station"]]};
+const THREAT={L:"Low",M:"Medium",H:"High",C:"Critical",X:"Extreme"};
+const pill=(g,th)=>g?`<span class="grid${g==="X01"?" x01":""}${th?" t"+th:""}"${th?` title="${THREAT[th]} threat"`:""}>${g}</span>`:"";
+const RARE_FIND=new Set(["Medal of Unquestioning Service","Animal Trial Records: R-4","R-4 Bio-Compound"]);
+ICONS.battery='<rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M7 7V5h3v2M14 7V5h3v2M6.5 13.5h3.5M15.5 12v3M14 13.5h3"/>';
+ICONS.sparkplug='<path d="M10 2h4v4h-4zM8.5 6h7v4h-7zM10 10h4v6h-4zM12 16v3M10 21h4"/>';
+ICONS.pump='<circle cx="10" cy="14" r="6"/><circle cx="10" cy="14" r="2"/><path d="M16 14h5M13 9l3-5h5"/>';
+const NOTE={"Car Battery":"Radar truck repair: Mechanic Order, Repair a Truck Side Op","Alternator":"Radar truck repair: Mechanic Order, Repair a Truck Side Op","Spark Plug":"Radar truck repair: Mechanic Order, Repair a Truck Side Op","Tank Alternator":"Tank repair part","Tank Battery":"Tank repair part","Tank Water Pump":"Tank repair part"};
+const CONTAINERS={"Ballistic Fabric":"Weapons Locker","Binding Catalyst":"First Aid Kit, Medicine Cabinet","Biomaterials":"Chemical Storage, First Aid Kit, Medicine Cabinet, Medical Bag, UXO Missile","CPU":"Computer","Comms Module":"Gaming Computer, Server Blade, IT Bag","Control Units":"Server Blade, Basic Weapons Locker, Weapons Locker","Detonators":"Chemical Storage, Tool Box, Basic Weapons Locker","Electronic Sensors":"Server Blade, Computer, IT Bag","High-Tenacity Fibers":"Weapons Locker, Locker","Nitro Compounds":"Chemical Storage, Hidden Cache","Nylon Cloth":"Dresser, Duffel, Luggage","Nylon Laminate":"Dresser, Luggage, Weapons Locker","Power Regulator":"Gaming Computer, Chemical Storage, Server Blade","Printed Circuit Board":"Gaming Computer, Chemical Storage, Server Blade","Reactive Metals":"Chemical Storage, Weapons Locker, Tool Chest","Regional Combat Notes":"Safe, Supply Crate, Supply Drop","Rigid Synthetics":"Filing Cabinet, Luggage, Dresser","Stabilized Reagents":"Chemical Storage, Commercial Refrigerator, Medical Bag","Stock Rod":"Tool Chest, Industrial Locker, Tool Box","Structural Alloy":"Weapons Locker, Tool Chest, Hidden Cache","Turned Components":"Tool Chest, Industrial Locker, Tool Box","Volatile Explosives":"Server Blade, Care Package, First Aid Kit","Gold Bar":"Safe","Gold Skull":"Safe"};
+const RECIPE_CONT={"Pain Killers":"Duffel, Medicine Cabinet, First Aid Kit, Chemical Storage","Smelling Salts":"Chemical Storage, Medicine Cabinet, First Aid Kit, Duffel","Energy Drink":"Filing Cabinet, Medicine Cabinet, Jacket, Luggage","2-Plate Ballistic Gel Vest":"Safe","2-Plate Helmet Armor Vest":"Safe, Footlocker","3-Plate Ballistic Gel Vest":"Filing Cabinet","3-Plate Helmet Armor Vest":"Military Bag, Safe","Tempered Armor Vest":"Footlocker, Weapons Locker","Medium Scavenger Backpack":"Weapons Locker, Safe, Locker, Filing Cabinet","Medium Weapon Backpack":"Safe, Basic Weapons Locker, Military Bag","Small Secure Backpack":"Safe, Basic Weapons Locker","Medium Secure Backpack":"Military Bag","Secure Scavenger Backpack":"Cache","Screamer Mine":"Chemical Storage, Locker, Duffel, Filing Cabinet, LT Crate, Safe, Luggage, Tool Box","Heartbeat Sensor":"Duffel, Tool Box","Stim":"Safe, Cache, Luggage, Duffel, EMT Bag, Medical Bag, Weapons Locker, Tool Chest, Jacket","Claymore":"Tool Box, Safe","Proximity Mine":"Tool Box","Zip Gun":"IT Bag, Duffel, Locker, Jacket, Safe, Medical Bag, Tool Box","Drill Charge":"Chemical Storage, Weapons Locker, Luggage, Tool Chest, Tool Box, Medical Bag, Filing Cabinet, IT Bag","Trip Wire":"Locker, Cache, LT Crate, Safe","SAM Airburst Turret":"Tool Box, IT Bag","Trophy System":"Filing Cabinet, Tool Chest, Tool Box","Bomb Glider":"Safe","Bombing Run":"Safe","Combat Drone":"Safe","Artillery Beacon":"Military Bag","Impact Warhead":"Safe, Filing Cabinet, Weapons Locker","Railgun Sentry":"Safe","Weak Night Vision Goggles":"Medicine Cabinet, Cache, Chemical Storage, Medical Bag"};
+ICONS.key='<circle cx="8" cy="15" r="4.5"/><path d="m11.2 11.8 8.8-8.8M17 6l2.5 2.5M14.5 8.5 16.5 10.5"/>';
+const KEYINFO={"Air Base Access Card":{"area":"Chang-san Air Base","needs":null},"Air Base Armory Card":{"area":"Chang-san Air Base","needs":"Made by upgrading an Air Base Access Card"},"Air Base DRC Weapons Locker":{"area":"Chang-san Air Base","needs":null},"Commandant Office":{"area":"Chang-san Air Base","needs":null},"Field Depot":{"area":"Chang-san Air Base","needs":null},"Weapons Mod Workshop":{"area":"Chang-san Air Base","needs":null},"Supreme Leader Access Card":{"area":"Chang-san Air Base","needs":null},"Counting Room Vault":{"area":"Heavenly Luck Casino","needs":null},"Jin-Tae's Private Lounge":{"area":"Heavenly Luck Casino","needs":"Restore casino power first"},"Vault Armory":{"area":"Heavenly Luck Casino","needs":null},"Train Depot Storageroom":{"area":"Cheongun Village","needs":null},"Mechanic's Shack":{"area":"Cheongun Village","needs":null},"Coin Mining Den Key":{"area":"NuriGO West","needs":null},"Jang-ui's Converted Power Room":{"area":"NuriGO Mall","needs":null},"Shopping DRC Locker":{"area":"NuriGO Mall","needs":"A core to open the gated side room"},"Downtown Branch Lobby Main":{"area":"The Grid","needs":null},"Hanex Guard Station":{"area":"The Grid","needs":null},"Executive Arms Auction":{"area":"The Grid","needs":null},"Netshin IT Room":{"area":"Netshin Tech Complex","needs":null},"Netshin Security Office":{"area":"Netshin Tech Complex","needs":null},"Roze's High-Rise Armory":{"area":"Netshin Tech Complex","needs":null},"Lucera Suite 703 Bedroom":{"area":"Hotel Lucera","needs":"Zipline up the main hall shaft"},"Gangbyeon Apartment B":{"area":"Compound Echo","needs":null},"Militia Arms Depot":{"area":"Compound Echo","needs":null},"Police Weapon Depository":{"area":"Wolves Stadium","needs":null},"Shop Records Room":{"area":"Wolves Stadium","needs":null},"Gas Station Electrical Room":{"area":"Construction Zone","needs":null},"Old Barber Shop":{"area":"Songdo Wharf","needs":null},"Gorani's Scout Overlook":{"area":"Imjin Farmland","needs":null},"Imjin Mill Foreman's Office":{"area":"Imjin Farmland","needs":null},"Mill Explosives Lab":{"area":"Imjin Farmland","needs":null},"Hoesik Supply Room":{"area":"Imjin Farmland","needs":null},"Haejeok Radio Station":{"area":"Imjin Suburb","needs":null},"Haksan School Armory":{"area":"Deadtown","needs":null},"Re-Education Center Annex":{"area":"Deadtown","needs":null},"Underground Propaganda Store Room":{"area":"Deadtown","needs":null},"Hospital Chemical Lab Key":{"area":"Mirae General Hospital","needs":"Lockers inside need separate keys"},"Hospital Chemical Lockers":{"area":"Mirae General Hospital","needs":"Hospital Chemical Lab Key to reach them"},"Mirae Electrical Room":{"area":"Mirae General Hospital","needs":null},"The Doctor's Command Office":{"area":"Mirae General Hospital","needs":null},"Iskra's Control Room":{"area":"Cheonwang Peak Array","needs":null},"Reactor 02 Control Room":{"area":"Haneul Nuclear Reactor","needs":null},"Reactor DRC Locker":{"area":"Haneul Nuclear Reactor","needs":"Radiation protection"},"Utility Maintenance Storage":{"area":"Haneul Nuclear Reactor","needs":null},"The Chemist's Secure Armory":{"area":"Haneul Nuclear Reactor","needs":"Radiation protection"},"Hazard Storehouse":{"area":"Haneul Nuclear Reactor","needs":null},"Kang's Arms Incinerator":{"area":"14th Political Prison","needs":null},"South Block Armory":{"area":"14th Political Prison","needs":null},"The Citadel East Wing":{"area":"14th Political Prison","needs":null},"The Citadel East Wing Office Key":{"area":"14th Political Prison","needs":null},"The Citadel Main Control Room":{"area":"14th Political Prison","needs":"East Wing terminal sequence first (The Citadel East Wing)"},"The Citadel Secondary Control Room":{"area":"14th Political Prison","needs":null},"The Citadel South Wing":{"area":"14th Political Prison","needs":"Inner cell keypad is separate"},"Prison Encampment Storage":{"area":"14th Political Prison","needs":null},"Archive Closet":{"area":"X01 Data Center","needs":null},"Audit Room":{"area":"X01 Main Warehouse","needs":null},"Superintendent's Office":{"area":"X01 Main Warehouse","needs":null},"Executive Room":{"area":"X01 Admin Offices","needs":null},"Maintenance Room":{"area":"X01 Production Assembly","needs":null},"Small Test Chamber":{"area":"X01 T.E.C.H. Lab","needs":"Get past the security checkpoints"},"Deep Vault 106":{"area":"X01 Deep Vault","needs":null},"Deep Vault 301":{"area":"X01 Deep Vault","needs":null},"Deep Vault 406":{"area":"X01 Deep Vault","needs":null},"X01 Vault DRC Locker Key":{"area":"X01 Deep Vault","needs":"Deep Vault access (a Deep Vault key)"},"Encodable Blank Keycard":{"area":"X01","needs":"Encode it at an X01 Encoder"},"Staff Emergency Exfil Keycard":{"area":"X01","needs":null},"Bank Branch Vault Access":{"area":"Bank branches","needs":null},"Gun Store Weapons Locker Key":{"area":"Gun stores","needs":null},"Black Market Weapons Locker Key":{"area":"Black market","needs":null},"Police Station Key":{"area":"Police stations","needs":null}};
+const MANUALS=[{"n":"Han 86","c":"AR","m":0,"p":6000},{"n":"M4","c":"AR","m":1,"p":6250},{"n":"Hyeon Burst","c":"AR","m":1,"p":5250},{"n":"Kastov 762","c":"AR","m":1,"p":null},{"n":"Patriot XMR","c":"AR","m":1,"p":6500},{"n":"Oden","c":"AR","m":1,"p":null},{"n":"Axion","c":"AR","m":1,"p":null},{"n":"Cronen Squall","c":"AR","m":1,"p":null},{"n":"PPSh-41","c":"SMG","m":0,"p":null},{"n":"ISO Nightshade","c":"SMG","m":1,"p":3000},{"n":"VEL 46","c":"SMG","m":1,"p":null},{"n":"WZ.55 Striga","c":"SMG","m":1,"p":null},{"n":"X-58 Nyx","c":"SMG","m":1,"p":null},{"n":"Rezi 12","c":"SG","m":1,"p":null},{"n":"Warlord","c":"SG","m":1,"p":null},{"n":"FiNN LMG","c":"LMG","m":1,"p":8000},{"n":"Type 73","c":"LMG","m":1,"p":null},{"n":"APOC-338","c":"LMG","m":1,"p":null},{"n":"MAR-9","c":"MR","m":1,"p":6500},{"n":"Oris 8.6","c":"MR","m":1,"p":7000},{"n":"Mosin-Nagant","c":"MR","m":1,"p":7500},{"n":"KG-7 Vulcan","c":"SR","m":1,"p":16000},{"n":"Astaroth .57","c":"SR","m":1,"p":null},{"n":"Signal .50","c":"SR","m":1,"p":14000},{"n":"Sang 9mm","c":"PI","m":0,"p":null},{"n":"Krait P68","c":"PI","m":1,"p":null},{"n":".50 GS","c":"PI","m":1,"p":null},{"n":"Mojave .357","c":"PI","m":1,"p":null},{"n":"FSS Carbon Edge 1095","c":"ML","m":1,"p":null},{"n":"Cronen Osprey","c":"AR","m":1,"p":null},{"n":"CSG-35","c":"SMG","m":1,"p":null},{"n":"PILA","c":"LA","m":1,"p":null},{"n":"RPG-8","c":"LA","m":1,"p":null},{"n":"JOKR","c":"LA","m":1,"p":null},{"n":"PM-40 Anvil","c":"LA","m":1,"p":null}];
+const WPLURAL={AR:"Assault Rifles",SMG:"SMGs",SG:"Shotguns",LMG:"LMGs",MR:"Marksman Rifles",SR:"Sniper Rifles",PI:"Pistols",LA:"Launchers",ML:"Melee"};
+const WCLASS={AR:["Assault Rifle","w_rifle","AR"],SMG:["SMG","w_smg"],SG:["Shotgun","w_shotgun"],LMG:["LMG","w_lmg"],MR:["Marksman Rifle","w_sniper","Marksman"],SR:["Sniper Rifle","w_sniper","Sniper"],PI:["Pistol","w_pistol"],LA:["Launcher","w_launcher","Launchers"],ML:["Melee","g_knife"]};
+ICONS.w_rifle='<path d="M2 11h13l2-2h5v3h-4l-1 2H9l-1 4H5l1-4H2z"/>';
+ICONS.w_smg='<path d="M3 10h14v3h-5l-1 5H8l1-5H3z"/><path d="M17 11.5h4M13 13v3"/>';
+ICONS.w_shotgun='<path d="M2 11h17v2h-8l-2 3H6l1-3H2z"/><path d="M19 11.5h3M12 13.5h4"/>';
+ICONS.w_lmg='<path d="M2 10h16v3h-5l-1 4H9l1-4H2z"/><path d="M18 11.5h4"/><rect x="10" y="13" width="4" height="4" rx="1"/>';
+ICONS.w_sniper='<path d="M2 12h15l1-1h4v2h-4l-1 1H9l-1 4H5l1-4H2z"/><rect x="7" y="8" width="7" height="2.5" rx="1"/>';
+ICONS.w_launcher='<path d="M2 10h16v4H2z"/><path d="M18 9.5l4-1.5v8l-4-1.5M7 14v4h3v-4M12 10V7h4v3"/>';
+ICONS.w_pistol='<path d="M4 8h14v4h-6l-1 2H8l-1 4H4l1-6z"/>';
+const RES_ICON={Synthetics:"res_syn",Electronics:"res_ele",Chemicals:"res_che",Metals:"res_met"};
+const SHIFT={};
+// optically centre every glyph in its tile (measured once at load)
+(function(){try{const ns="http://www.w3.org/2000/svg",s=document.createElementNS(ns,"svg");
+  s.setAttribute("viewBox","0 0 24 24");s.style.cssText="position:absolute;left:-999px;width:24px;height:24px";
+  document.documentElement.appendChild(s);
+  for(const k in ICONS){s.innerHTML="<g>"+ICONS[k]+"</g>";const bb=s.firstChild.getBBox();
+    const dx=12-(bb.x+bb.width/2),dy=12-(bb.y+bb.height/2);if(Math.abs(dx)>.3||Math.abs(dy)>.3) SHIFT[k]=[dx.toFixed(2),dy.toFixed(2)];}
+  s.remove();}catch(e){}})();
+const svg=k=>{const key=ICONS[k]?k:"cube",t=SHIFT[key];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${t?`<g transform="translate(${t[0]} ${t[1]})">${ICONS[key]}</g>`:ICONS[key]}</svg>`;};
+
+/* ---------- items ---------- */
+// [name, type, rarity(U/R/E/L/X/null), value, stack(null = undocumented), icon]
+const ITEM_ROWS=[
+ ["Biomaterials","Ingredient","U",200,10,"bottle"],
+ ["Control Units","Ingredient","U",200,10,"radio"],
+ ["Detonators","Ingredient","U",200,10,"coil"],
+ ["Electronic Sensors","Ingredient","U",600,10,"device"],
+ ["Reactive Metals","Ingredient","U",200,10,"shavings"],
+ ["Regional Combat Notes","Ingredient","U",1000,10,"notes"],
+ ["Rigid Synthetics","Ingredient","U",200,10,"clamp"],
+ ["Binding Catalyst","Ingredient","R",500,10,"vials"],
+ ["CPU","Ingredient","R",500,10,"chip"],
+ ["High-Tenacity Fibers","Ingredient","R",500,10,"rope"],
+ ["Nitro Compounds","Ingredient","R",500,10,"flame"],
+ ["Nylon Cloth","Ingredient","R",500,10,"cloth"],
+ ["Printed Circuit Board","Ingredient","R",500,10,"pcb"],
+ ["Stock Rod","Ingredient","R",500,10,"rod"],
+ ["Structural Alloy","Ingredient","R",500,10,"bars"],
+ ["Alloyed Plating","Ingredient","E",1500,null,"plate"],
+ ["Ballistic Fabric","Ingredient","E",1500,null,"weave"],
+ ["Comms Module","Ingredient","E",1500,10,"comms"],
+ ["Nylon Laminate","Ingredient","E",1500,null,"layers"],
+ ["Power Regulator","Ingredient","E",1500,10,"power"],
+ ["Stabilized Reagents","Ingredient","E",1500,10,"jerrycan"],
+ ["Turned Components","Ingredient","E",1500,null,"gear"],
+ ["Volatile Explosives","Ingredient","E",1500,null,"dynamite"],
+ ["Experimental Compounds","Ingredient","L",3500,null,"beaker"],
+ ["Military Composites","Ingredient","L",3500,10,"honeycomb"],
+ ["Nano-Structured Alloy","Ingredient","L",null,null,"lattice"],
+ ["Prototype RF Module","Ingredient","L",null,null,"milradio"],
+ ["SR-16 Bio Agent Sample","Ingredient","L",4500,null,"vial"],
+ ["Specter Fabric Sample","Ingredient","L",null,10,"swatch","Spectre Fiber Sample"],
+ ["Ballistic Flight Logs","Valuable","U",1000,10,"notebook"],
+ ["Infantry Invasion Plans","Valuable","U",1000,10,"map"],
+ ["Animal Trial Records: R-4","Valuable","R",3000,null,"folderPaw"],
+ ["Cash Bag","Valuable","R",1500,null,"moneybag"],
+ ["Degraded Execution Footage","Valuable","R",2000,10,"vhs"],
+ ["Encrypted Archive","Valuable","R",2000,10,"hdd"],
+ ["Medal of Unquestioning Service","Valuable","R",2500,null,"medal"],
+ ["Nuclear Program Files","Valuable","R",2000,10,"floppy"],
+ ["R-4 Bio-Compound","Valuable","R",3000,null,"canister"],
+ ["Ceramic Pup of Loyalty","Valuable","E",6000,null,"pup"],
+ ["Foreign Intelligence Targets","Valuable","E",5000,null,"target"],
+ ["Gilded Maritime Relic","Valuable","E",7000,null,"anchor"],
+ ["Human Trial Records: R-18","Valuable","E",8000,null,"folderPerson"],
+ ["W.M.D Manifest","Valuable","E",5000,null,"clipboard"],
+ ["Gilded Medal of Absolute Loyalty","Valuable","L",15000,null,"star"],
+ ["Sanctioned Assassination List","Valuable","L",10000,null,"list"],
+ ["Weapons Grade Isotope","Valuable","L",12000,null,"isotope"],
+ ["Gold Bar","Valuable","X",25000,null,"ingot"],
+ ["Gold Skull","Valuable","X",25000,null,"skull"],
+ ["Cipher Code Ledger","Valuable","L",null,null,"ledger"],
+ ["North Korean Bayonet","Valuable","U",1000,null,"g_knife"],
+ ["Car Battery","Repair","U",200,null,"battery"],
+ ["Alternator","Repair","U",100,null,"gear"],
+ ["Spark Plug","Repair","U",100,null,"sparkplug"],
+ ["Tank Alternator","Repair","L",100,null,"gear"],
+ ["Tank Battery","Repair","L",100,null,"battery"],
+ ["Tank Water Pump","Repair","L",100,null,"pump"],
+ ["Air Base Access Card", "Key", "E", null, null, "key"],
+ ["Air Base Armory Card", "Key", null, null, null, "key"],
+ ["Air Base DRC Weapons Locker", "Key", null, null, null, "key"],
+ ["Commandant Office", "Key", null, null, null, "key"],
+ ["Field Depot", "Key", null, null, null, "key"],
+ ["Weapons Mod Workshop", "Key", null, null, null, "key"],
+ ["Supreme Leader Access Card", "Key", null, null, null, "key"],
+ ["Counting Room Vault", "Key", null, null, null, "key"],
+ ["Jin-Tae's Private Lounge", "Key", null, null, null, "key"],
+ ["Vault Armory", "Key", null, null, null, "key"],
+ ["Train Depot Storageroom", "Key", null, null, null, "key"],
+ ["Mechanic's Shack", "Key", null, null, null, "key"],
+ ["Coin Mining Den Key", "Key", null, null, null, "key"],
+ ["Jang-ui's Converted Power Room", "Key", null, null, null, "key"],
+ ["Shopping DRC Locker", "Key", null, null, null, "key"],
+ ["Downtown Branch Lobby Main", "Key", "U", null, null, "key"],
+ ["Hanex Guard Station", "Key", null, null, null, "key"],
+ ["Executive Arms Auction", "Key", null, null, null, "key"],
+ ["Netshin IT Room", "Key", null, null, null, "key"],
+ ["Netshin Security Office", "Key", null, null, null, "key"],
+ ["Roze's High-Rise Armory", "Key", null, null, null, "key"],
+ ["Lucera Suite 703 Bedroom", "Key", null, null, null, "key"],
+ ["Gangbyeon Apartment B", "Key", null, null, null, "key"],
+ ["Militia Arms Depot", "Key", null, null, null, "key"],
+ ["Police Weapon Depository", "Key", null, null, null, "key"],
+ ["Shop Records Room", "Key", null, null, null, "key"],
+ ["Gas Station Electrical Room", "Key", null, null, null, "key"],
+ ["Old Barber Shop", "Key", null, null, null, "key"],
+ ["Gorani's Scout Overlook", "Key", null, null, null, "key"],
+ ["Imjin Mill Foreman's Office", "Key", null, null, null, "key"],
+ ["Mill Explosives Lab", "Key", null, null, null, "key"],
+ ["Hoesik Supply Room", "Key", null, null, null, "key"],
+ ["Haejeok Radio Station", "Key", null, null, null, "key"],
+ ["Haksan School Armory", "Key", null, null, null, "key"],
+ ["Re-Education Center Annex", "Key", null, null, null, "key"],
+ ["Underground Propaganda Store Room", "Key", null, null, null, "key"],
+ ["Hospital Chemical Lab Key", "Key", null, null, null, "key"],
+ ["Hospital Chemical Lockers", "Key", null, null, null, "key"],
+ ["Mirae Electrical Room", "Key", null, null, null, "key"],
+ ["The Doctor's Command Office", "Key", null, null, null, "key"],
+ ["Iskra's Control Room", "Key", null, null, null, "key"],
+ ["Reactor 02 Control Room", "Key", null, null, null, "key"],
+ ["Reactor DRC Locker", "Key", null, null, null, "key"],
+ ["Utility Maintenance Storage", "Key", "R", null, null, "key"],
+ ["The Chemist's Secure Armory", "Key", null, null, null, "key"],
+ ["Hazard Storehouse", "Key", null, null, null, "key"],
+ ["Kang's Arms Incinerator", "Key", null, null, null, "key"],
+ ["South Block Armory", "Key", "L", null, null, "key"],
+ ["The Citadel East Wing", "Key", "U", null, null, "key"],
+ ["The Citadel East Wing Office Key", "Key", null, null, null, "key"],
+ ["The Citadel Main Control Room", "Key", "U", null, null, "key"],
+ ["The Citadel Secondary Control Room", "Key", "U", null, null, "key"],
+ ["The Citadel South Wing", "Key", null, null, null, "key"],
+ ["Prison Encampment Storage", "Key", null, null, null, "key"],
+ ["Archive Closet", "Key", null, null, null, "key"],
+ ["Audit Room", "Key", "E", null, null, "key"],
+ ["Superintendent's Office", "Key", null, null, null, "key"],
+ ["Executive Room", "Key", null, null, null, "key"],
+ ["Maintenance Room", "Key", "R", null, null, "key"],
+ ["Small Test Chamber", "Key", null, null, null, "key"],
+ ["Deep Vault 106", "Key", null, null, null, "key"],
+ ["Deep Vault 301", "Key", null, null, null, "key"],
+ ["Deep Vault 406", "Key", "L", null, null, "key"],
+ ["X01 Vault DRC Locker Key", "Key", "X", null, null, "key"],
+ ["Encodable Blank Keycard", "Key", null, null, null, "key"],
+ ["Staff Emergency Exfil Keycard", "Key", null, null, null, "key"],
+ ["Bank Branch Vault Access", "Key", null, null, null, "key"],
+ ["Gun Store Weapons Locker Key", "Key", null, null, null, "key"],
+ ["Black Market Weapons Locker Key", "Key", null, null, null, "key"],
+ ["Police Station Key", "Key", null, null, null, "key"]
+];
+const RAR={C:["Common","--r-c",0],U:["Uncommon","--r-u",1],R:["Rare","--r-r",2],E:["Epic","--r-e",3],L:["Legendary","--r-l",4],X:["Ultra","--r-x",5]};
+const ITEMS={};
+for(const [name,type,rar,val,stack,icon,alias] of ITEM_ROWS){
+  ITEMS[name]={name,type,rar,val,stack:stack||(type==="Ingredient"?10:null),icon,alias,ups:[],recs:[],made:null};
+}
+
+/* ---------- FOB upgrades ---------- */
+// tiers: [label, cash (null = undocumented, 0 = none), effect, {item:qty}, flag]
+const UPGRADES=[
+ {id:"stashItem",station:"Stash / Loadout",name:"Stash Item Upgrade",tiers:[
+  ["I",10000,"+18 item slots",{"Rigid Synthetics":10,"Electronic Sensors":10}],
+  ["II",50000,"Stash: 124 items",{"Detonators":20,"Nylon Cloth":10,"Power Regulator":5}],
+  ["III",100000,"+18 item slots",{"Binding Catalyst":20,"Stock Rod":20,"Alloyed Plating":10}],
+  ["IV","~200000","+18 item slots",{"Gold Skull":5,"Alloyed Plating":30,"Experimental Compounds":10,"Turned Components":30}]]},
+ {id:"stashWeapon",station:"Stash / Loadout",name:"Stash Weapon Upgrade",tiers:[
+  ["I",50000,"+6 weapon slots",{"Reactive Metals":20,"Stock Rod":10,"Comms Module":5}],
+  ["II",100000,"+6 weapon slots",{"Structural Alloy":20,"High-Tenacity Fibers":20,"Turned Components":10}],
+  ["III","~100000","+6 weapon slots",{"Gold Bar":5,"Stabilized Reagents":30,"Volatile Explosives":30,"Nano-Structured Alloy":10}]]},
+ {id:"bank",station:"Stash / Loadout",name:"Bank Upgrade",tiers:[
+  ["I",20000,"Cap 250k",{}],
+  ["II",50000,"Cap 500k",{}],
+  ["III",100000,"Cap 1M",{"Infantry Invasion Plans":5}],
+  ["IV",200000,"Cap 2M",{"Ballistic Flight Logs":5,"Regional Combat Notes":5}],
+  ["V",500000,"Cap 5M",{"Degraded Execution Footage":10}],
+  ["VI",500000,"Cap 10M",{"Nuclear Program Files":10,"Encrypted Archive":10}],
+  ["VII",500000,"Cap 25M",{"W.M.D Manifest":10}],
+  ["VIII",500000,"Cap unknown",{"Foreign Intelligence Targets":10,"Cipher Code Ledger":10},"unverified"]]},
+ {id:"uncPrint",station:"3D Printer",name:"Uncommon Ingredient Printing",tiers:[
+  ["I",50000,"Print Uncommon ingredients",{"Biomaterials":20,"High-Tenacity Fibers":10,"Comms Module":5}]]},
+ {id:"epicPrint",station:"3D Printer",name:"Epic Ingredient Printing",tiers:[
+  ["I",100000,"Print Epic ingredients",{"Binding Catalyst":10,"Printed Circuit Board":10,"Military Composites":5}]]},
+ {id:"mia",station:"Operators",name:"MIA Recovery Discount",tiers:[
+  ["I",0,"5% off recovery",{"Regional Combat Notes":5,"Control Units":10,"Rigid Synthetics":10}],
+  ["II",0,"5% off recovery",{"Nuclear Program Files":5,"Degraded Execution Footage":5,"Binding Catalyst":10,"Nitro Compounds":10}],
+  ["III",null,"5% off recovery",{"W.M.D Manifest":5,"Foreign Intelligence Targets":5,"Power Regulator":10,"Comms Module":10}],
+  ["IV",null,"5% off recovery",{"Sanctioned Assassination List":5,"Ballistic Fabric":30,"Nylon Laminate":30,"Prototype RF Module":10}]]},
+ {id:"gunsmith",station:"Gunsmith (DMZ Lv 10)",name:"Gunsmith Upgrade",tiers:[
+  ["I",50000,"5% off Gunsmith",{"Reactive Metals":20,"CPU":10,"Power Regulator":5}],
+  ["II",100000,"5% off Gunsmith",{"Nitro Compounds":20,"Comms Module":10,"Military Composites":10}]]},
+ {id:"dogtag",station:"Dog Tag Case (DMZ Lv 20)",name:"Dog Tag Case Upgrade",tiers:[
+  ["I",10000,"+20 tag slots",{"Rigid Synthetics":10,"Biomaterials":10}],
+  ["II",50000,"+20 tag slots",{"Detonators":20,"Nylon Cloth":10,"Power Regulator":5}],
+  ["III",100000,"+20 tag slots",{"Printed Circuit Board":10,"Structural Alloy":10,"Power Regulator":5}],
+  ["IV",200000,"+20 tag slots",{"CPU":20,"Stabilized Reagents":10,"Experimental Compounds":5}]]},
+ {id:"vendor",station:"Vendor (DMZ Lv 5)",name:"Vendor Item Upgrade",tiers:[
+  ["I",0,"More Vendor items",{"Electronic Sensors":20,"CPU":10,"Printed Circuit Board":10,"Prototype RF Module":2}],
+  ["II",null,"More Vendor items",{"Control Units":20,"High-Tenacity Fibers":10,"Nylon Cloth":10,"Nano-Structured Alloy":2}]]}
+];
+for(const u of UPGRADES){
+  u.tiers=u.tiers.map(([label,cash,eff,need,flag],i)=>({label,cash,eff,need,flag,idx:i}));
+  for(const t of u.tiers) for(const n in t.need){
+    if(!ITEMS[n]) console.warn("Unknown item",n);
+    else ITEMS[n].ups.push({u,t,qty:t.need[n]});
+  }
+}
+
+/* ---------- 3D printer recipes ---------- */
+// "Name|unlock|Input qty;Input qty"
+const RECIPE_SRC=`1-Plate Armor Vest|DMZ Lv 2|Synthetics 25;Metals 25
+2-Plate Armor Vest|DMZ Lv 2|Synthetics 50;Reactive Metals 5
+2-Plate Ballistic Gel Vest|Find in game|Synthetics 50;Binding Catalyst 3;Reactive Metals 10
+2-Plate Helmet Armor Vest|Find in game|Synthetics 50;Structural Alloy 3;Reactive Metals 10
+3-Plate Armor Vest|DMZ Orders|Ballistic Fabric 2;Nylon Cloth 5;Reactive Metals 10
+3-Plate Ballistic Gel Vest|Find in game|Experimental Compounds 2;Stabilized Reagents 4;Biomaterials 10
+3-Plate Helmet Armor Vest|Find in game|Nano-Structured Alloy 2;Alloyed Plating 4;Reactive Metals 10
+3.5-Plate Armor Vest|X01|Specter Fabric Sample 1;Power Regulator 2;Structural Alloy 5
+Advanced UAV|Find in game|Comms Module 2;Nitro Compounds 3;Electronic Sensors 5
+Alloyed Plating|Epic Ingredient Printing|Metals 100;Structural Alloy 3
+Ammo Box|DMZ Lv 12|Synthetics 15;Metals 15
+Argonaut Armor|X01|Specter Fabric Sample 1;Alloyed Plating 2;High-Tenacity Fibers 5
+Armor Box|DMZ Lv 14|Metals 30;Reactive Metals 3
+Artillery Beacon|Find in game|Volatile Explosives 2;Nitro Compounds 3;Detonators 5
+Ballistic Fabric|Epic Ingredient Printing|Synthetics 100;High-Tenacity Fibers 3
+Bandage|DMZ Lv 2|Synthetics 15;Chemicals 15
+Biomaterials|Uncommon Ingredient Printing|Synthetics 20;Chemicals 20
+Bomb Glider|Find in game|Chemicals 30;Stock Rod 2;Control Units 5
+Bombing Run|Find in game|Chemicals 30;Nitro Compounds 2;Control Units 5
+C4|DMZ Orders|Chemicals 10;Metals 10
+Care Package|DMZ Lv 28|Electronics 20;Control Units 2;Rigid Synthetics 2
+Claymore|Find in game|Chemicals 10;Metals 10
+Combat Drone|Find in game|Electronics 30;CPU 2;Control Units 5
+Comms Module|Epic Ingredient Printing|Electronics 100;CPU 3
+Consumable Box|X01 Orders p2|Synthetics 120;High-Tenacity Fibers 2;Biomaterials 4
+Control Units|Uncommon Ingredient Printing|Electronics 20;Metals 20
+Crossfire|Find in game|Prototype RF Module 2;Volatile Explosives 3;Electronic Sensors 5
+DDOS|DMZ Orders|Electronics 30;Detonators 3
+Decoy Grenade|DMZ Orders|Synthetics 10;Chemicals 10
+Defibrillator|Op. Critical Extraction|Electronics 30;Control Units 3
+Detonators|Uncommon Ingredient Printing|Electronics 20;Metals 20
+Disposable Parachute|DMZ Lv 55|Chemicals 30;Rigid Synthetics 3
+Door Breacher Charge|Find in game|Experimental Compounds 1;Stock Rod 5;Volatile Explosives 3
+Drill Charge|Find in game|Chemicals 15;Metals 15
+Durable Gas Mask|Find in game|Chemicals 30;High-Tenacity Fibers 1;Biomaterials 5
+Electronic Sensors|Uncommon Ingredient Printing|Synthetics 20;Electronics 20
+Elite Night Vision Goggles|Find in game|Power Regulator 2;CPU 3;Electronic Sensors 5
+Encodable Blank Keycard|X01|Printed Circuit Board 6;Control Units 8
+Energy Drink|Find in game|Chemicals 10;Metals 10
+Experimental Compounds|X01|Volatile Explosives 2;Binding Catalyst 5
+Flash|DMZ Orders|Synthetics 10;Chemicals 10
+Frag Grenade|DMZ Lv 7|Chemicals 10;Metals 10
+Fulton Drop Marker|Find in game|Prototype RF Module 1;Comms Module 3;Control Units 5
+Gas Mask|DMZ Lv 26|Chemicals 30;Rigid Synthetics 3
+Hazmat Box|X01 Orders p3|Synthetics 120;Alloyed Plating 1;Nylon Cloth 4
+Heartbeat Sensor|Find in game|Synthetics 25;Chemicals 25
+Impact Warhead|Find in game|Turned Components 2;Nitro Compounds 3;Detonators 5
+Inflatable Decoy|DMZ Lv 52|Synthetics 15;Electronics 15
+Large Backpack|DMZ Orders|Nylon Laminate 2;Structural Alloy 5;Rigid Synthetics 10
+Large Scavenger Backpack|Find in game|Nylon Laminate 2;High-Tenacity Fibers 5;Rigid Synthetics 10
+Large Secure Backpack|Find in game|Prototype RF Module 2;Alloyed Plating 4;Rigid Synthetics 10
+Medical Box|X01 Orders p2|Metals 100;Stabilized Reagents 1;Binding Catalyst 4
+Medium Backpack|DMZ Lv 2|Synthetics 50;Rigid Synthetics 5
+Medium Scavenger Backpack|Find in game|Metals 50;Nylon Cloth 3;Rigid Synthetics 10
+Medium Secure Backpack|Find in game|Alloyed Plating 2;Nylon Cloth 5;Reactive Metals 10
+Medium Weapon Backpack|Find in game|Synthetics 50;High-Tenacity Fibers 3;Rigid Synthetics 10
+Medkit|DMZ Lv 2|Chemicals 30;Binding Catalyst 1;Biomaterials 5
+Military Composites|X01|Nylon Laminate 2;Nylon Cloth 5
+Molotov Cocktail|DMZ Lv 36|Chemicals 10;Metals 10
+Nano-Structured Alloy|X01|Turned Components 2;Structural Alloy 5
+Night Vision Goggles|Underground Pt 1 Orders|Metals 50;Printed Circuit Board 3;Control Units 10
+Nylon Laminate|Epic Ingredient Printing|Synthetics 100;Nylon Cloth 3
+Pain Killers|Find in game|Electronics 15;Chemicals 15
+Parachute|Find in game|Turned Components 2;Nylon Cloth 5;Rigid Synthetics 10
+Portable Radar|Find in game|Synthetics 15;Electronics 15
+Power Regulator|Epic Ingredient Printing|Electronics 100;Printed Circuit Board 3
+Prototype RF Module|X01|Power Regulator 2;CPU 5
+Proximity Mine|Find in game|Chemicals 10;Metals 10
+Radiation Blockers|Find in game|Chemicals 30;Biomaterials 3
+Railgun Sentry|Find in game|Power Regulator 2;Nitro Compounds 3;Control Units 5
+Razor Wire Trap|Find in game|Electronics 15;Metals 15
+Reactive Metals|Uncommon Ingredient Printing|Chemicals 20;Metals 20
+Rebreather|Find in game|Synthetics 15;Chemicals 15
+Recon Drone|DMZ Orders|Metals 30;Electronic Sensors 3
+Revive Pistol|DMZ Lv 25|Power Regulator 2;Binding Catalyst 3;Detonators 5
+Rigid Synthetics|Uncommon Ingredient Printing|Synthetics 20;Metals 20
+Riot Shield|Find in game|Synthetics 15;Metals 15
+SAM Airburst Turret|Find in game|Metals 30;Detonators 3
+Screamer Mine|Find in game|Synthetics 10;Chemicals 10
+Secure Scavenger Backpack|Find in game|Military Composites 2;Nylon Laminate 4;Reactive Metals 10
+Sedative Inhaler|DMZ Lv 3|Synthetics 15;Chemicals 15
+Seeker Drone|Find in game|Synthetics 15;Electronics 15
+Self-Revive Kit|DMZ Lv 48|Stabilized Reagents 1;Biomaterials 5;Binding Catalyst 3
+Semtex|DMZ Lv 23|Chemicals 10;Metals 10
+Shock Stick|DMZ Lv 17|Synthetics 10;Chemicals 10
+Small Backpack|DMZ Lv 2|Synthetics 25;Metals 25
+Small Secure Backpack|Find in game|Metals 50;Structural Alloy 3;Rigid Synthetics 10
+Smelling Salts|Find in game|Chemicals 30;Detonators 3
+Smoke Grenade|DMZ Lv 4|Synthetics 10;Chemicals 10
+Smoke Wall|Find in game|Electronics 15;Chemicals 15
+Snapshot Grenade|DMZ Lv 9|Synthetics 10;Chemicals 10
+Spotter Scope|DMZ Lv 12|Synthetics 50;Electronic Sensors 5
+Stabilized Reagents|Epic Ingredient Printing|Chemicals 100;Binding Catalyst 3
+Staff Emergency Exfil Keycard|X01 Orders p4|CPU 2;Printed Circuit Board 4;Control Units 8
+Stim|Find in game|Synthetics 15;Chemicals 15
+Stun Grenade|DMZ Lv 4|Synthetics 10;Chemicals 10
+Survivor Box|X01|SR-16 Bio Agent Sample 1;Ballistic Fabric 2;High-Tenacity Fibers 3
+Tempered Armor Vest|Find in game|Military Composites 2;Ballistic Fabric 4;Rigid Synthetics 10
+Thermite|DMZ Lv 41|Chemicals 10;Metals 10
+Throwing Knife|DMZ Lv 7|Chemicals 25;Metals 25
+Trip Wire|Find in game|Chemicals 15;Metals 15
+Trophy System|Find in game|Electronics 15;Control Units 3
+Turned Components|Epic Ingredient Printing|Metals 100;Stock Rod 3
+UAV|DMZ Lv 31|Electronics 30;Structural Alloy 2;Electronic Sensors 5
+Utility Box|Find in game|Nano-Structured Alloy 1;Comms Module 2;Printed Circuit Board 6
+Volatile Explosives|Epic Ingredient Printing|Chemicals 100;Nitro Compounds 3
+Weak Night Vision Goggles|Find in game|Metals 25;Control Units 5
+Zip Gun|Find in game|Chemicals 10;Metals 10
+Concussion Grenade|DMZ Lv 4|Synthetics 10;Chemicals 10`;
+const RECIPES=RECIPE_SRC.split("\n").map(l=>{
+  const [name,unlock,ins]=l.split("|");
+  const inputs=ins.split(";").map(s=>{const m=s.trim().match(/^(.*) (\d+)$/);return {n:m[1],q:+m[2]};});
+  return {name,unlock,inputs};
+});
+for(const r of RECIPES){
+  if(ITEMS[r.name]) ITEMS[r.name].made=r;
+  for(const i of r.inputs) if(ITEMS[i.n] && i.n!==r.name) ITEMS[i.n].recs.push({r,qty:i.q});
+}
+
+const RCAT_ORDER=["Consumables","Plate Carriers","Backpacks","Tacticals","Lethals","Field Upgrades","Fire Support","Gear","Ingredients"];
+const RCAT_MAP={"1-Plate Armor Vest": "Plate Carriers", "2-Plate Armor Vest": "Plate Carriers", "2-Plate Ballistic Gel Vest": "Plate Carriers", "2-Plate Helmet Armor Vest": "Plate Carriers", "3-Plate Armor Vest": "Plate Carriers", "3-Plate Ballistic Gel Vest": "Plate Carriers", "3-Plate Helmet Armor Vest": "Plate Carriers", "3.5-Plate Armor Vest": "Plate Carriers", "Argonaut Armor": "Plate Carriers", "Tempered Armor Vest": "Plate Carriers", "Bandage": "Consumables", "Medkit": "Consumables", "Energy Drink": "Consumables", "Pain Killers": "Consumables", "Self-Revive Kit": "Consumables", "Radiation Blockers": "Consumables", "Smelling Salts": "Consumables", "Sedative Inhaler": "Consumables", "Concussion Grenade": "Tacticals", "Decoy Grenade": "Tacticals", "Flash": "Tacticals", "Smoke Grenade": "Tacticals", "Snapshot Grenade": "Tacticals", "Stun Grenade": "Tacticals", "Heartbeat Sensor": "Tacticals", "Stim": "Tacticals", "Shock Stick": "Tacticals", "Spotter Scope": "Tacticals", "C4": "Lethals", "Claymore": "Lethals", "Frag Grenade": "Lethals", "Molotov Cocktail": "Lethals", "Proximity Mine": "Lethals", "Semtex": "Lethals", "Thermite": "Lethals", "Throwing Knife": "Lethals", "Drill Charge": "Lethals", "Screamer Mine": "Lethals", "Door Breacher Charge": "Lethals", "Trip Wire": "Lethals", "Zip Gun": "Lethals", "Ammo Box": "Field Upgrades", "Armor Box": "Field Upgrades", "Consumable Box": "Field Upgrades", "Hazmat Box": "Field Upgrades", "Medical Box": "Field Upgrades", "Survivor Box": "Field Upgrades", "Utility Box": "Field Upgrades", "DDOS": "Field Upgrades", "Inflatable Decoy": "Field Upgrades", "Portable Radar": "Field Upgrades", "Recon Drone": "Field Upgrades", "Riot Shield": "Field Upgrades", "Smoke Wall": "Field Upgrades", "Trophy System": "Field Upgrades", "Seeker Drone": "Field Upgrades", "Razor Wire Trap": "Field Upgrades", "Revive Pistol": "Field Upgrades", "UAV": "Fire Support", "Advanced UAV": "Fire Support", "Artillery Beacon": "Fire Support", "Bomb Glider": "Fire Support", "Bombing Run": "Fire Support", "Care Package": "Fire Support", "Combat Drone": "Fire Support", "Crossfire": "Fire Support", "Fulton Drop Marker": "Fire Support", "Impact Warhead": "Fire Support", "Railgun Sentry": "Fire Support", "SAM Airburst Turret": "Fire Support", "Gas Mask": "Gear", "Durable Gas Mask": "Gear", "Night Vision Goggles": "Gear", "Weak Night Vision Goggles": "Gear", "Elite Night Vision Goggles": "Gear", "Rebreather": "Gear", "Parachute": "Gear", "Disposable Parachute": "Gear", "Defibrillator": "Gear", "Encodable Blank Keycard": "Gear", "Staff Emergency Exfil Keycard": "Gear"};
+const rCat=r=>RCAT_MAP[r.name]||(/Backpack/.test(r.name)?"Backpacks":"Ingredients");
+/* ---------- state ---------- */
+const KEY="mw4fob.v1";
+let done={}; // upgrade id -> number of tiers done
+try{done=JSON.parse(localStorage.getItem(KEY)||"{}")||{};}catch(e){done={};}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done));}catch(e){}};
+const nDone=u=>Math.min(done[u.id]||0,u.tiers.length);
+const isDone=(u,t)=>t.idx<nDone(u);
+const isNext=(u,t)=>t.idx===nDone(u);
+const RKEY="mw4fob.recipes.v1";
+let learned=new Set();try{learned=new Set(JSON.parse(localStorage.getItem(RKEY)||"[]"));}catch(e){}
+const saveL=()=>{try{localStorage.setItem(RKEY,JSON.stringify([...learned]));}catch(e){}};
+/* Saved progress stores names. If a recipe or weapon is ever renamed, add old:new here - never just edit the name. */
+const RENAMED={"NVGs":"Night Vision Goggles"};
+const migrate=set=>{let ch=false;for(const o in RENAMED) if(set.has(o)){set.delete(o);set.add(RENAMED[o]);ch=true;}return ch;};
+if(migrate(learned)) saveL();
+function tickLevel(n){const r=RECIPES.filter(x=>lvlReq(x)&&lvlReq(x)<=n).sort((a,b)=>lvlReq(b)-lvlReq(a))[0];if(r) learned.add(r.name);}
+try{const ol=+localStorage.getItem("mw4fob.level.v1");if(ol){tickLevel(ol);saveL();}localStorage.removeItem("mw4fob.level.v1");}catch(e){}
+const lvlReq=r=>{const m=r.unlock.match(/^DMZ Lv (\d+)$/);return m?+m[1]:0;};
+const LVL_GATE={vendor:5,gunsmith:10,dogtag:20}; // FOB station level gates; any upgrade at all means the printer (Lv 2) is open
+function lvlFloor(except){let L=0;for(const u of UPGRADES) if(nDone(u)) L=Math.max(L,LVL_GATE[u.id]||2);for(const r of RECIPES) if(r.name!==except&&learned.has(r.name)) L=Math.max(L,lvlReq(r));return L;}
+const autoLearned=r=>{const id=r.unlock==="Uncommon Ingredient Printing"?"uncPrint":r.unlock==="Epic Ingredient Printing"?"epicPrint":null;if(id) return nDone(UPGRADES.find(u=>u.id===id))>0;const L=lvlReq(r);return L?lvlFloor(r.name)>=L:false;};
+const isLearned=r=>learned.has(r.name)||autoLearned(r);
+let craftFilter="all",craftView="recipes",craftCat="";
+const craftQ=()=>cur==="craft"?norm($("#q").value):"";
+const MKEY="mw4fob.manuals.v1";
+let manuals=new Set();try{manuals=new Set(JSON.parse(localStorage.getItem(MKEY)||"[]"));}catch(e){}
+if(migrate(manuals)) try{localStorage.setItem(MKEY,JSON.stringify([...manuals]));}catch(e){}
+const saveM=()=>{try{localStorage.setItem(MKEY,JSON.stringify([...manuals]));}catch(e){}};
+const manualHave=w=>!w.m||manuals.has(w.n);
+
+/* ---------- classification ---------- */
+const VERDICT={
+  keep:{label:"FOB",c:"--keep",ord:0,name:"FOB",sub:"Items used for FOB upgrades."},
+  hold:{label:"SCARCE",c:"--hold",ord:1,name:"Scarce",sub:"Rare item, no current use. Sell or keep a stack just in case."},
+  print:{label:"CRAFT",c:"--print",ord:2,name:"Crafting",sub:"Ingredients used for crafting items."},
+  key:{label:"KEY",c:"--key",ord:3.5,name:"Keys",sub:"Opens loot rooms and lockers."},
+  repair:{label:"REPAIR",c:"--repair",ord:3,name:"Repair",sub:"Vehicle repair parts. Keep a few for repairs."},
+  sell:{label:"SELL",c:"--sell",ord:4,name:"Sell",sub:"Common item, no current use."}
+};
+function printUnlock(it){
+  if(!it.made) return null;
+  if(it.made.unlock==="Uncommon Ingredient Printing") return {up:"uncPrint",label:"Uncommon Ingredient Printing"};
+  if(it.made.unlock==="Epic Ingredient Printing") return {up:"epicPrint",label:"Epic Ingredient Printing"};
+  return {up:null,label:it.made.unlock+" recipe (unlock not documented)"};
+}
+function canPrintNow(it){
+  const p=printUnlock(it); if(!p||!p.up) return false;
+  const u=UPGRADES.find(x=>x.id===p.up); return nDone(u)>=1;
+}
+function assess(it){
+  if(it.type==="Key"){const k=KEYINFO[it.name]||{};return {v:"key",remaining:0,next:0,keepTxt:"",slotTxt:"",reason:[],req:k.needs||null};}
+  if(it.type==="Repair") return {v:"repair",remaining:0,next:0,keepTxt:"Keep a few",slotTxt:"",reason:["Vehicle repair part"]};
+  let remaining=0,next=0,unverified=0;
+  for(const x of it.ups){
+    if(isDone(x.u,x.t)) continue;
+    remaining+=x.qty;
+    if(isNext(x.u,x.t)) next+=x.qty;
+    if(x.t.flag==="unverified") unverified+=x.qty;
+  }
+  const stack=it.stack||10, approx=!it.stack;
+  const rank=it.rar?RAR[it.rar][2]:3; // unknown rarity treated as scarce
+  const printable=canPrintNow(it);
+  let v,reason,keepTxt,slotTxt="";
+  const slots=n=>{if(approx)return "";const s=Math.ceil(n/stack);return `${s} slot${s>1?"s":""}`;};
+  if(remaining>0){
+    v="keep";
+    keepTxt=`Keep ${remaining}`;slotTxt=slots(remaining);
+    const bits=[];
+    if(printable) bits.push(`Printable now`);
+    else if(it.made && it.rar==="U") bits.push(`Printable after Uncommon Printing`);
+    else if(it.made && it.rar==="E") bits.push(`Printable after Epic Printing`);
+    reason=bits;
+  }else if(!it.recs.length){
+    if(it.ups.length && rank>=3){
+      v="hold";keepTxt="Keep a few";
+      reason=["FOB tiers done","Higher tiers may reuse it"];
+    }else if(it.type==="Valuable" && (rank>=3 || RARE_FIND.has(it.name))){
+      v="hold";keepTxt="Sell or keep a stack";
+      reason=["No FOB or recipe use","Rare find, keep a stack just in case"];
+    }else{
+      v="sell";keepTxt="Keep 0";
+      reason=NOTE[it.name]?[NOTE[it.name],"No FOB or recipe use"]:it.ups.length?["FOB tiers done","No recipes"]:["No FOB or recipe use"];
+    }
+  }else if(printable){
+    v="print";keepTxt="Only for planned prints";
+    reason=[(it.ups.length?"No FOB use left":"Not used for FOB"),"Print on demand"];
+  }else if(rank>=2){
+    v="hold";keepTxt="Keep 1 stack";
+    reason=[(it.ups.length?"No FOB use left":"Not used for FOB"),`Can't print${it.made?" yet":""}`,`In ${it.recs.length} recipe${it.recs.length>1?"s":""}`];
+  }else{
+    v="print";keepTxt="Only for planned prints";
+    reason=[(it.ups.length?"No FOB use left":"Not used for FOB"),"Common, recipes only"];
+  }
+  return {v,remaining,next,keepTxt,slotTxt,reason};
+}
+
+/* ---------- DMZ Codex links ---------- */
+const CODEX="https://dmzcodex.com/";
+const slug=s=>s.toLowerCase().replace(/[.']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const codexItem=n=>`${CODEX}items/${slug(n)}/`;
+const codexRecipe=r=>`${CODEX}recipes/${r.unlock==="X01"?"x01-":""}${slug(r.name)}/`;
+const UP_SLUG={stashItem:"stash-item-upgrade",stashWeapon:"stash-weapon-upgrade",bank:"bank-upgrade",uncPrint:"ingredient-printing",epicPrint:"epic-ingredient-printing",mia:"mia-recovery-discount",gunsmith:"gunsmith-discount",dogtag:"dog-tag-case-storage-upgrade",vendor:"vendor-item-slots-upgrade"};
+const codexUp=u=>`${CODEX}upgrades/${UP_SLUG[u.id]}/`;
+const LINK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+const ext=href=>`<a class="ext" href="${href}" target="_blank" rel="noopener" title="Open on DMZ Codex" aria-label="Open on DMZ Codex">${LINK_SVG}</a>`;
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cashVal=n=>typeof n==="string"?+n.replace("~",""):n;
+const money=n=>{if(n==null)return "$??";if(n===0)return "No cash";const g=typeof n==="string"?"~":"",v=cashVal(n);return g+(v>=1e6?`$${v/1e6}M`:`$${v/1000}k`);};
+const rcol=it=>`var(${it.rar?RAR[it.rar][1]:"--r-n"})`;
+const rname=it=>it.rar?RAR[it.rar][0]:"";
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+for(const it of Object.values(ITEMS)){
+  it.n=norm(it.name);
+  it.words=it.n.split(" ");
+  it.initials=it.words.map(w=>w[0]).join("");
+  it.compact=it.n.replace(/ /g,"");
+  it.alt=it.alias?norm(it.alias):null;
+}
+
+/* ---------- search ---------- */
+function match(it,q){
+  if(!q) return {score:1};
+  const qc=q.replace(/ /g,"");
+  let i=it.n.indexOf(q);
+  if(i===0) return {score:100,hl:[i,q.length]};
+  if(i>0) return {score:80,hl:[i,q.length]};
+  if(it.initials.startsWith(qc)) return {score:70};
+  if(it.compact.includes(qc)) return {score:60};
+  const qt=q.split(" ");
+  if(qt.every(t=>it.words.some(w=>w.startsWith(t)))) return {score:50};
+  if(it.alt && it.alt.includes(q)) return {score:45};
+  return null;
+}
+function hlName(it,m){
+  if(!m||!m.hl) return esc(it.name);
+  // same length as the raw name, so offsets line up
+  const raw=it.name,n2=raw.toLowerCase().replace(/[^a-z0-9 ]/g," ");
+  const q=it.n.substr(m.hl[0],m.hl[1]),j=n2.indexOf(q);
+  if(j<0) return esc(raw);
+  return esc(raw.slice(0,j))+"<mark>"+esc(raw.slice(j,j+q.length))+"</mark>"+esc(raw.slice(j+q.length));
+}
+
+/* ---------- render: stash ---------- */
+let filter="all";
+function renderChips(all){
+  const counts={all:all.length,keep:0,hold:0,print:0,repair:0,key:0,sell:0};
+  for(const a of all) counts[a.a.v]++;
+  $("#chips").innerHTML=["all","keep","hold","print","repair","key","sell"].map(k=>{
+    const dot=k==="all"?"":`<i style="background:var(${VERDICT[k].c})"></i>`;
+    return `<button class="chip${filter===k?" on":""}" data-f="${k}">${dot}${k==="all"?"All":VERDICT[k].name} <b>${counts[k]}</b></button>`;
+  }).join("");
+}
+function itemRow(it,a,m){
+  const used=[];
+  const liveUps=it.ups.filter(x=>!isDone(x.u,x.t));
+  if(liveUps.length) used.push(`${liveUps.length} FOB tier${liveUps.length>1?"s":""}`);
+  if(it.recs.length) used.push(`${it.recs.length} recipe${it.recs.length>1?"s":""}`);
+  if(!used.length) used.push(it.type==="Valuable"?"Cash only":it.type==="Repair"?"Repair part":"No known use");
+  if(it.type==="Key"){used.length=0;used.push(KEYINFO[it.name].area);}
+  const sub=[rname(it),it.val?`$${it.val.toLocaleString("en-GB")}`:(it.type==="Key"?"":"$??"),used.join(", ")].filter(Boolean).join(" · ");
+  const q=a.v==="hold"&&a.keepTxt.startsWith("Sell")?"sell or 1 stack":a.v==="keep"?`${a.remaining}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}`:a.v==="hold"?(a.keepTxt.includes("stack")?"1 stack":"a few"):a.v==="sell"?"sell all":a.v==="repair"?"keep a few":a.v==="key"?(KEYINFO[it.name]&&KEYINFO[it.name].needs?`<span class="needs">requirements</span>`:""):"as needed";
+  return `<button class="item" style="--c:var(${VERDICT[a.v].c});--rc:${rcol(it)}" data-item="${esc(it.name)}">
+    <span class="ico">${svg(it.icon)}</span>
+    <span class="meta"><div class="nm">${hlName(it,m)}</div><div class="sub">${sub}</div></span>
+    <span class="badge"><span class="v">${VERDICT[a.v].label}</span><div class="q">${q}</div></span>
+  </button>`;
+}
+function renderStash(){
+  const rows=Object.values(ITEMS).map(it=>({it,a:assess(it)}));
+  renderChips(rows);
+  const shown=rows.filter(r=>filter==="all"||r.a.v===filter);
+  shown.sort((x,y)=>(VERDICT[x.a.v].ord-VERDICT[y.a.v].ord)||(y.a.remaining-x.a.remaining)||((y.it.rar?RAR[y.it.rar][2]:3)-(x.it.rar?RAR[x.it.rar][2]:3))||x.it.name.localeCompare(y.it.name));
+  if(!shown.length){$("#list").innerHTML=`<div class="empty">None.</div>`;return;}
+  let html="",last=null;
+  for(const r of shown){
+    if(r.a.v!==last){const V=VERDICT[r.a.v];html+=`<div class="sec-h" style="--c:var(${V.c})"><i></i>${V.name}<small>${V.sub}</small></div>`;last=r.a.v;}
+    html+=itemRow(r.it,r.a,null);
+  }
+  $("#list").innerHTML=html;
+}
+
+/* ---------- render: crafting ---------- */
+const RESOURCES=new Set(["Synthetics","Electronics","Chemicals","Metals"]);
+const routeOrd=u=>{
+  if(/Printing/.test(u)) return 0;
+  const m=u.match(/DMZ Lv (\d+)/); if(m) return 1+ +m[1]/100;
+  if(/Orders/.test(u)) return 2; if(/Op\./.test(u)) return 2.5;
+  if(u==="X01") return 4; return 3;
+};
+function catPills(keys,label,pool,keyOf){
+  const n=k=>pool.filter(x=>keyOf(x)===k).length;
+  return `<button class="chip${craftCat?"":" on"}" data-cc="">All <b>${pool.length}</b></button>`+keys.filter(k=>n(k)||craftCat===k).map(k=>`<button class="chip${craftCat===k?" on":""}" data-cc="${k}">${label(k)} <b>${n(k)}</b></button>`).join("");
+}
+function renderManuals(){
+  const order=Object.keys(WCLASS);
+  const q=craftQ(),qpool=MANUALS.filter(w=>!q||nameMatch(w.n,q)||(w.m&&nameMatch("manual "+w.n,q)));
+  $("#craftCats").innerHTML=catPills(order,k=>WCLASS[k][2]||WCLASS[k][0],qpool,w=>w.c);
+  const pool=qpool.filter(w=>!craftCat||w.c===craftCat);
+  const nL=pool.filter(manualHave).length;
+  $("#craftChips").innerHTML=[["all","All",pool.length],["learned","Learned",nL],["todo","Not learned",pool.length-nL]].map(([k,l,n])=>`<button class="${craftFilter===k?"on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
+  const rows=pool.filter(w=>craftFilter==="all"||(craftFilter==="learned")===manualHave(w)).sort((a,b)=>order.indexOf(a.c)-order.indexOf(b.c)||a.n.localeCompare(b.n));
+  const cnt={},got={};for(const w of pool){cnt[w.c]=(cnt[w.c]||0)+1;if(manualHave(w)) got[w.c]=(got[w.c]||0)+1;}
+  let html="",last=null;
+  for(const w of rows){
+    if(w.c!==last){html+=`<div class="cat-h">${WPLURAL[w.c]}<b>${got[w.c]||0}/${cnt[w.c]}</b></div>`;last=w.c;}
+    const L=manualHave(w);
+    html+=`<div class="up craft${L?" learnt":""}" data-manual="${esc(w.n)}"><div class="craft-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div class="meta"><div class="nm">${esc(w.n)}</div><div class="sub">${w.m?"":"No manual needed · "}${w.p?`Gunsmith $${w.p.toLocaleString("en-GB")}`:"Gunsmith $??"}</div></div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
+  }
+  $("#craftList").innerHTML=html||`<div class="empty">None.</div>`;
+}
+function renderCraft(){
+  document.querySelectorAll("#craftSeg button").forEach(b=>b.classList.toggle("on",b.dataset.cv===craftView));
+  if(craftView==="manuals") return renderManuals();
+  const q=craftQ(),qpool=RECIPES.filter(r=>!q||nameMatch(r.name,q));
+  $("#craftCats").innerHTML=catPills(RCAT_ORDER,k=>k,qpool,rCat);
+  const pool=qpool.filter(r=>!craftCat||rCat(r)===craftCat);
+  const nL=pool.filter(isLearned).length;
+  $("#craftChips").innerHTML=[["all","All",pool.length],["learned","Learned",nL],["todo","Not learned",pool.length-nL]].map(([k,l,n])=>`<button class="${craftFilter===k?"on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
+  const rows=pool.filter(r=>craftFilter==="all"||(craftFilter==="learned")===isLearned(r)).sort((a,b)=>(RCAT_ORDER.indexOf(rCat(a))-RCAT_ORDER.indexOf(rCat(b)))||(routeOrd(a.unlock)-routeOrd(b.unlock))||a.name.localeCompare(b.name));
+  const cnt={},got={};for(const r of pool){const c=rCat(r);cnt[c]=(cnt[c]||0)+1;if(isLearned(r)) got[c]=(got[c]||0)+1;}
+  let lastCat=null;
+  if(!rows.length){$("#craftList").innerHTML=`<div class="empty">None.</div>`;return;}
+  $("#craftList").innerHTML=rows.map(r=>{
+    const c=rCat(r),hdr=c!==lastCat?`<div class="cat-h">${c}<b>${got[c]||0}/${cnt[c]}</b></div>`:"";lastCat=c;
+    const makes=ITEMS[r.name];
+    const chips=r.inputs.map(i=>{
+      const it=ITEMS[i.n];
+      if(!it) return `<span class="ichip" style="--rc:var(--r-n)"><span class="mi rsc">${svg(RES_ICON[i.n])}</span><b>${i.q}</b> ${esc(i.n)}</span>`;
+      return `<button class="ichip" style="--rc:${rcol(it)}" data-item="${esc(i.n)}"><span class="mi">${svg(it.icon)}</span><b>${i.q}</b> ${esc(i.n)}</button>`;
+    }).join("");
+    const tile=makes
+      ?`<button class="ico" style="--rc:${rcol(makes)}" data-item="${esc(r.name)}">${svg(makes.icon)}</button>`
+      :`<span class="ico" style="--rc:${recipeCol(r)}">${svg(recipeIcon(r))}</span>`;
+    const title=makes
+      ?`<button class="nm" data-item="${esc(r.name)}">${esc(r.name)} <span class="flag">ingredient</span></button>`
+      :`<div class="nm">${esc(r.name)}</div>`;
+    const L=isLearned(r),auto=autoLearned(r);
+    return hdr+`<div class="up craft${L?" learnt":""}" data-recipe="${esc(r.name)}"><div class="craft-h">${tile}<div class="meta">${title}<div class="sub">${RECIPE_RAR[r.name]?RAR[RECIPE_RAR[r.name]][0]+" · ":""}${esc(r.unlock.replace(" Ingredient Printing"," Printing"))}${ext(codexRecipe(r))}</div>${r.unlock==="Find in game"?`<div class="rfind">${RECIPE_CONT[r.name]?"Recipe loot: "+esc(RECIPE_CONT[r.name]):"Recipe loot: filing cabinets, chemical storage, weapons lockers"}</div>`:""}</div><button class="learn${L?" on":""}" data-learn="${esc(r.name)}"${auto?" disabled":""} aria-label="Learned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div><div class="need">${chips}</div></div>`;
+  }).join("");
+}
+
+/* ---------- render: FOB tree ---------- */
+
+/* ---------- suggested next upgrade ---------- */
+const RW={U:1,R:2,E:3,L:10,X:8};
+function printUnits(kind,except){ // remaining required units of ingredients this printing upgrade unlocks
+  let n=0,types=new Set();
+  for(const it of Object.values(ITEMS)){
+    const p=printUnlock(it); if(!p||p.up!==kind) continue;
+    for(const x of it.ups){ if(isDone(x.u,x.t)||x.u.id===except) continue; n+=x.qty; types.add(it.name); }
+  }
+  return {n,types:types.size,names:[...types].sort()};
+}
+function upDesc(u,t){
+  if(u.id==="uncPrint"||u.id==="epicPrint"){const pu=printUnits(u.id,u.id);return `Allows printing of ${pu.names.join(", ")} - ${pu.n} total required for remaining upgrades.`;}
+  if(u.id==="bank") return `Raises bank cap to ${t.eff.replace("Cap ","")}.`;
+  if(u.id==="mia") return "5% off Operator recovery.";
+  if(u.id==="gunsmith") return "5% off Gunsmith purchases.";
+  if(u.id==="vendor") return "More items at the Vendor.";
+  return t.eff+".";
+}
+function suggestNext(){
+  let best=null;
+  for(const u of UPGRADES){
+    const t=u.tiers[nDone(u)]; if(!t||t.flag==="unverified") continue;
+    if(u.id==="epicPrint"&&!nDone(UPGRADES.find(x=>x.id==="uncPrint"))) continue;
+    const cash=t.cash==null?150000:cashVal(t.cash);
+    let w=0; for(const n in t.need){const it=ITEMS[n];w+=t.need[n]*(it&&it.rar?RW[it.rar]:4);}
+    const cost=cash/25000+w/10+.5;
+    let ben,why;
+    if(u.id==="uncPrint"||u.id==="epicPrint"){const pu=printUnits(u.id,u.id);ben=pu.n/5+10;why=`Prints ${pu.types} ingredients you need ${pu.n} of`;}
+    else if(u.id==="stashItem"){ben=30;why="More stash space";}
+    else if(u.id==="stashWeapon"){ben=15;why="More weapon slots";}
+    else if(u.id==="bank"){ben=6;why="Higher cash cap";}
+    else if(u.id==="mia"||u.id==="gunsmith"){ben=8;why=t.eff;}
+    else {ben=5;why=t.eff;}
+    const sc=ben/cost;
+    if(!best||sc>best.sc) best={u,t,why,sc};
+  }
+  return best;
+}
+function renderFob(){
+  let cash=0,unknownCash=0,tiersLeft=0,tiersTotal=0;
+  for(const u of UPGRADES) for(const t of u.tiers){
+    tiersTotal++;
+    if(isDone(u,t)) continue;
+    tiersLeft++;
+    if(t.flag==="unverified") continue;
+    if(t.cash==null) unknownCash++; else {cash+=cashVal(t.cash);if(typeof t.cash==="string") unknownCash++;}
+  }
+  const sg=suggestNext();
+  const costTxt=`${unknownCash?"~":""}${cash>=1e6?`$${Math.round(cash/1e5)/10}M`:`$${Math.round(cash/1000)}k`}`;
+  $("#summary").innerHTML=`<div class="sbox"><small>Completed:</small><b>${tiersTotal-tiersLeft} / ${tiersTotal}</b><small>Remaining cost:</small><b>${costTxt}</b></div>
+    ${sg?`<button class="sbox sugg" title="${esc(upDesc(sg.u,sg.t))}" data-goup="${sg.u.id}" data-gotier="${sg.t.idx}"><small>Suggested upgrade:</small><b>${esc(sg.u.name)}${sg.u.tiers.length>1?" "+esc(sg.t.label):""}</b><span>${esc(sg.why)}</span><i class="info" data-tip="1" aria-label="Details">i</i><div class="stip hide">${esc(upDesc(sg.u,sg.t))}</div></button>`:""}`;
+  let html="",lastStation=null;
+  for(const u of UPGRADES){
+    if(u.station!==lastStation){html+=`<div class="station">${esc(u.station)}</div>`;lastStation=u.station;}
+    html+=`<div class="up" data-upid="${u.id}"><div class="up-h"><b>${esc(u.name)}</b><span>${nDone(u)} / ${u.tiers.length}${ext(codexUp(u))}</span></div>`;
+    for(const t of u.tiers){
+      const cls=isDone(u,t)?"done":isNext(u,t)?"next":"";
+      const chips=Object.entries(t.need).map(([n,q])=>{
+        const it=ITEMS[n];
+        return `<button class="ichip" style="--rc:${rcol(it)}" data-item="${esc(n)}"><span class="mi">${svg(it.icon)}</span><b>${q}</b> ${esc(n)}</button>`;
+      }).join("");
+      const flag=t.flag?`<span class="flag">${t.flag}</span>`:"";
+      html+=`<div class="tier ${cls}" id="t-${u.id}-${t.idx}">
+        <button class="node" data-up="${u.id}" data-t="${t.idx}" aria-label="Toggle ${esc(u.name)} tier ${esc(t.label)}">${esc(t.label)}</button>
+        <div class="tbody">
+          <div class="tline"><span class="eff">${esc(t.eff)}${flag}</span><span class="cash">${money(t.cash)}</span></div>
+          ${chips?`<div class="need">${chips}</div>`:`<div class="tnote">Cash only</div>`}
+        </div></div>`;
+    }
+    html+=`</div>`;
+  }
+  $("#tree").innerHTML=html;
+}
+
+/* ---------- detail (sheet + tooltip) ---------- */
+function detailHTML(it,compact){
+  const a=assess(it),V=VERDICT[a.v];
+  let h=`<div class="sh-h" style="--rc:${rcol(it)}"><span class="ico">${svg(it.icon)}</span><div>
+    <h2>${esc(it.name)}</h2><div class="sub">${it.type==="Key"?["Key",it.rar?rname(it):""].filter(Boolean).join(" · "):[it.type,it.rar?rname(it):"",it.val?`$${it.val.toLocaleString("en-GB")}`:"$??",it.stack?`stack ${it.stack}`:""].filter(Boolean).join(" · ")}</div></div></div>
+    <div class="verdict" style="--c:var(${V.c})"><div class="vt">${V.name.toUpperCase()}</div>${a.v==="key"?`<div class="kreq">Requirements: ${a.req?`<span class="needs">${esc(a.req)}</span>`:"None"}</div>`:`<div class="keep">${a.keepTxt}${a.slotTxt?` <span class="slots">(${a.slotTxt})</span>`:""}</div>`}${a.reason.length?`<ul>${a.reason.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>`:""}</div>`;
+  const hasG=w=>Array.isArray(w)?!!w[1]:w.at.some(x=>x[1]);
+  const wh=WHERE[it.name]&&[...WHERE[it.name].filter(hasG),...WHERE[it.name].filter(w=>!hasG(w))];
+  h+=`<div class="sh-sec"><h3>${it.type==="Key"?"Opens":"Where to find"}</h3>${CONTAINERS[it.name]?`<div class="cont">${esc(CONTAINERS[it.name])}</div>`:""}${wh?`<ul class="where">${wh.map(w=>Array.isArray(w)?`<li>${pill(w[1],w[2])}${esc(w[0])}</li>`:w.at.every(x=>!x[0])?`<li>${w.at.map(x=>pill(x[1],x[2])).join("")}${esc(w.t)}</li>`:`<li>${esc(w.t)}<div class="spots">${w.at.map(([n,g,th])=>`<span class="spot">${pill(g,th)}${esc(n)}</span>`).join("")}</div></li>`).join("")}</ul>`:`<div class="tnote">Not documented yet</div>`}</div>`;
+  if(it.ups.length){
+    h+=`<div class="sh-sec"><h3>FOB upgrades</h3>`;
+    const ups=[...it.ups].sort((x,y)=>isDone(x.u,x.t)-isDone(y.u,y.t));
+    for(const x of ups){
+      const d=isDone(x.u,x.t);
+      h+=`<button class="row link${d?" done":""}" data-goup="${x.u.id}" data-gotier="${x.t.idx}"><span>${esc(x.u.name)} ${esc(x.t.label)}${!d&&isNext(x.u,x.t)?'<span class="tag">NEXT</span>':""}${x.t.flag==="unverified"?'<span class="flag">unverified</span>':""}</span><span class="r">×${x.qty}</span></button>`;
+    }
+    h+=`</div>`;
+  }
+  if(it.made){
+    const p=printUnlock(it),now=canPrintNow(it);
+    h+=`<div class="sh-sec"><h3>Printable from</h3><div class="need">${it.made.inputs.map(i=>{const x=ITEMS[i.n];return x?`<button class="ichip" style="--rc:${rcol(x)}" data-item="${esc(i.n)}"><span class="mi">${svg(x.icon)}</span><b>${i.q}</b> ${esc(i.n)}</button>`:`<span class="ichip" style="--rc:var(--r-n)"><span class="mi rsc">${svg(RES_ICON[i.n])}</span><b>${i.q}</b> ${esc(i.n)}</span>`;}).join("")}</div><div class="tnote">Requires ${p.up?`<button class="reclink" data-goup="${p.up}" data-gotier="0">${esc(p.label)}</button> ${now?"(unlocked)":"(not unlocked yet)"}`:esc(p.label)}</div></div>`;
+  }
+  if(it.recs.length){
+    const lim=compact?4:6;
+    h+=`<div class="sh-sec"><h3>Used in ${it.recs.length} recipe${it.recs.length>1?"s":""}</h3>`;
+    it.recs.forEach((x,i)=>{
+      const others=x.r.inputs.filter(n=>n.n!==it.name).map(n=>`${n.q} ${esc(n.n)}`).join(", ");
+      h+=`<div class="rec${i>=lim?" extra hide":""}"><button class="reclink" data-gorecipe="${esc(x.r.name)}">${esc(x.r.name)}</button>${isLearned(x.r)?`<span class="lrn">✓</span>`:""} - <em>${x.qty}</em>${compact?"":ext(codexRecipe(x.r))}<small>+ ${others} · ${esc(x.r.unlock)}</small></div>`;
+    });
+    if(it.recs.length>lim) h+=compact?`<div class="tnote">+${it.recs.length-lim} more</div>`:`<button class="more" data-more>Show all ${it.recs.length}</button>`;
+    h+=`</div>`;
+  }
+  if(it.type==="Key"){const ar=KEYINFO[it.name].area;const near=Object.keys(KEYINFO).filter(n=>n!==it.name&&KEYINFO[n].area===ar);
+    if(near.length) h+=`<div class="sh-sec"><h3>Other keys here</h3><div class="need">${near.map(n=>`<button class="ichip" style="--rc:${rcol(ITEMS[n])}" data-item="${esc(n)}"><span class="mi">${svg("key")}</span>${esc(n)}</button>`).join("")}</div></div>`;}
+  else if(!it.ups.length && !it.recs.length) h+=`<div class="sh-sec tnote">No FOB upgrade or 3D Printer recipe uses this.</div>`;
+
+  if(!compact) h+=`<a class="codex" href="${codexItem(it.name)}" target="_blank" rel="noopener">${LINK_SVG}<span>${esc(it.name)} on DMZ Codex</span></a>`;
+  return h;
+}
+let sheetItem=null;const navStack=[];let restoring=false;
+function navPush(){if(restoring) return;navStack.push({tab:cur,y:window.scrollY,sheet:sheetItem});if(navStack.length>50)navStack.shift();updBack();
+  try{history.pushState({n:navStack.length},"",location.hash||"#"+cur);}catch(e){}}
+function updBack(){const b=document.getElementById("backBtn");if(b)b.classList.toggle("hide",!navStack.length);}
+function goBack(){const st=navStack.pop();updBack();if(!st) return;restoring=true;
+  tab(st.tab,true);window.scrollTo(0,st.y);if(st.sheet) openSheet(st.sheet);else closeSheet();restoring=false;}
+function openSheet(name){
+  const it=ITEMS[name]; if(!it) return;
+  if(sheetItem!==name) navPush();
+  sheetItem=name;
+  hideTip();
+  $("#sheet").innerHTML=`<div class="grab"></div>`+detailHTML(it,false);
+  $("#sheet").scrollTop=0;
+  $("#sheet").classList.add("on");$("#scrim").classList.add("on");
+}
+function closeSheet(){sheetItem=null;$("#sheet").classList.remove("on");$("#scrim").classList.remove("on");}
+$("#scrim").addEventListener("click",closeSheet);
+$("#backBtn").addEventListener("click",goBack);
+$("#sheet").addEventListener("click",e=>{
+  if(e.target.closest("[data-more]")){$("#sheet").querySelectorAll(".extra").forEach(n=>n.classList.remove("hide"));e.target.remove();}
+});
+// swipe down to close
+(()=>{let y0=null;const s=$("#sheet");
+  s.addEventListener("touchstart",e=>{y0=s.scrollTop<=0?e.touches[0].clientY:null;},{passive:true});
+  s.addEventListener("touchmove",e=>{if(y0!=null&&e.touches[0].clientY-y0>70){closeSheet();y0=null;}},{passive:true});
+})();
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
+
+const canHover=window.matchMedia&&matchMedia("(hover:hover) and (pointer:fine)").matches;
+const tip=$("#tip");let tipFor=null;
+function hideTip(){tip.style.display="none";tipFor=null;}
+if(canHover){
+  document.addEventListener("mouseover",e=>{
+    const el=e.target.closest("[data-item]");
+    if(!el){if(tipFor)hideTip();return;}
+    if(tipFor===el) return;
+    tipFor=el;tip.innerHTML=detailHTML(ITEMS[el.dataset.item],true);tip.style.display="block";
+    const r=el.getBoundingClientRect(),tw=340,th=tip.offsetHeight;
+    let x=r.right+10;if(x+tw>innerWidth-8)x=Math.max(8,r.left-tw-10);
+    if(x<8)x=Math.min(innerWidth-tw-8,r.left);
+    let y=Math.min(r.top,innerHeight-th-8);
+    tip.style.left=x+"px";tip.style.top=Math.max(8,y)+"px";
+  });
+  window.addEventListener("scroll",hideTip,{passive:true});
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const n=e.target.closest(".node");
+  if(n){
+    const u=UPGRADES.find(x=>x.id===n.dataset.up),i=+n.dataset.t;
+    done[u.id]=(i<nDone(u))?i:i+1; // untick cascades down, tick cascades up
+    save();renderFob();renderStash();renderCraft();return;
+  }
+  const lb=e.target.closest("[data-learn]");
+  if(lb){if(lb.disabled)return;const n=lb.dataset.learn;if(learned.has(n)) learned.delete(n);else{learned.add(n);const L=lvlReq(RECIPES.find(r=>r.name===n));if(L) for(const r of RECIPES) if(r.name!==n&&lvlReq(r)===L) learned.delete(r.name);}saveL();renderCraft();refreshCode();return;}
+  const mb=e.target.closest("[data-man]");
+  if(mb){if(mb.disabled)return;const n=mb.dataset.man;manuals.has(n)?manuals.delete(n):manuals.add(n);saveM();renderCraft();refreshCode();return;}
+  const cv=e.target.closest("[data-cv]");
+  if(cv){if(craftView!==cv.dataset.cv){craftView=cv.dataset.cv;craftFilter="all";craftCat="";renderCraft();}return;}
+  const cc=e.target.closest("[data-cc]");
+  if(cc){craftCat=craftCat===cc.dataset.cc?"":cc.dataset.cc;renderCraft();$("#craftCats").scrollLeft=craftCat?$("#craftCats").scrollLeft:0;return;}
+  const cf=e.target.closest("[data-cf]");
+  if(cf){craftFilter=cf.dataset.cf;renderCraft();return;}
+  const tipT=e.target.closest("[data-tip]");
+  if(tipT){e.stopPropagation();const tp=tipT.parentElement.querySelector(".stip");tp.classList.toggle("hide");return;}
+  document.querySelectorAll(".stip").forEach(x=>x.classList.add("hide"));
+  const gr=e.target.closest("[data-gorecipe]");
+  if(gr){navPush();closeSheet();$("#q").value="";craftView="recipes";craftFilter="all";craftCat="";tab("craft",true);flashEl([...document.querySelectorAll("#craftList [data-recipe]")].find(el=>el.dataset.recipe===gr.dataset.gorecipe));return;}
+  const gu=e.target.closest("[data-goup]");
+  if(gu){navPush();closeSheet();tab("fob",true);flashEl(document.getElementById(`t-${gu.dataset.goup}-${gu.dataset.gotier}`));return;}
+  const it=e.target.closest("[data-item]");
+  if(it){openSheet(it.dataset.item);return;}
+  const c=e.target.closest(".chip");
+  if(c){filter=c.dataset.f;renderStash();}
+});
+/* ---------- global search ---------- */
+const RECIPE_ICON=[["Backpack","backpack"],["Concussion","grenade"],["Vest","vest"],["Armor","vest"],["Box","crate"],["Care Package","crate"],["Drone","drone"],["UAV","radar"],["Radar","radar"],["Spotter","radar"],["Gas Mask","gasmask"],["Rebreather","gasmask"],["Night Vision","nvg"],["NVG","nvg"],["Parachute","parachute"],["Keycard","keycard"],["C4","charge"],["Charge","charge"],["Thermite","charge"],["Semtex","grenade"],["Mine","mine"],["Claymore","mine"],["Medkit","med"],["Bandage","med"],["Stim","syringe"],["Sedative","syringe"],["Self-Revive","syringe"],["Pain Killers","pill"],["Radiation","pill"],["Smelling","pill"],["Energy Drink","can"],["Defibrillator","pulse"],["Heartbeat","pulse"],["Sentry","turret"],["Turret","turret"],["Crossfire","turret"],["Knife","knife"],["Shock Stick","knife"],["Riot Shield","shield"],["Trophy","shield"],["Bombing","plane"],["Artillery","plane"],["Glider","plane"],["Warhead","plane"],["Fulton","plane"],["Decoy","decoy"],["Screamer","decoy"],["Pistol","pistol"],["Zip Gun","pistol"],["Wire","wire"],["DDOS","radio"],["Molotov","flame"]];
+const recipeIcon=r=>{const m=RECIPE_ICON.find(([k])=>r.name.includes(k));return m?(ICONS["g_"+m[1]]?"g_"+m[1]:m[1]):"g_grenade";};
+function nameMatch(name,q){
+  const n=norm(name),w=n.split(" "),qc=q.replace(/ /g,"");
+  const i=n.indexOf(q);
+  if(i===0) return 100; if(i>0) return 80;
+  if(w.map(x=>x[0]).join("").startsWith(qc)) return 70;
+  if(n.replace(/ /g,"").includes(qc)) return 60;
+  if(q.split(" ").every(t=>w.some(x=>x.startsWith(t)))) return 50;
+  return 0;
+}
+function searchAll(raw){
+  const q=norm(raw); if(!q) return [];
+  const out=[];
+  for(const it of Object.values(ITEMS)){const m=match(it,q);if(m) out.push({kind:"item",score:m.score+1,name:it.name,it,m});}
+  for(const r of RECIPES){if(ITEMS[r.name]) continue; const s=nameMatch(r.name,q); if(s) out.push({kind:"recipe",score:s,name:r.name,r});}
+  for(const u of UPGRADES){const s=nameMatch(u.name,q); if(s) out.push({kind:"upgrade",score:s,name:u.name,u});}
+  for(const w of MANUALS){const s=Math.max(nameMatch(w.n,q),w.m?nameMatch("Manual "+w.n,q):0); if(s) out.push({kind:"manual",score:s,name:w.n,w});}
+  out.sort((a,b)=>(b.score-a.score)||a.name.localeCompare(b.name));
+  return out;
+}
+let results=[],sel=0,autoTimer=null;
+function resHTML(r,i){
+  if(r.kind==="item"){
+    const a=assess(r.it),V=VERDICT[a.v];
+    return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:${rcol(r.it)}">${svg(r.it.icon)}</span><span class="meta"><div class="nm">${hlName(r.it,r.m)}</div><div class="sub">${r.it.type==="Key"?"Key · "+esc(KEYINFO[r.it.name].area):["Loot",rname(r.it)].filter(Boolean).join(" · ")}</div></span><span class="kind" style="background:var(${V.c});color:#111">${V.label}</span></button>`;
+  }
+  if(r.kind==="manual") return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[r.w.c][1])}</span><span class="meta"><div class="nm">${esc(r.w.n)}</div><div class="sub">Weapon Manual · ${WCLASS[r.w.c][0]}</div></span>${manualHave(r.w)?`<span class="kind" style="background:var(--sell);color:#111">LEARNED</span>`:`<span class="kind" style="background:var(--print);color:#111">NEW</span>`}</button>`;
+  if(r.kind==="recipe") return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:${recipeCol(r.r)}">${svg(recipeIcon(r.r))}</span><span class="meta"><div class="nm">${esc(r.name)}</div><div class="sub">Recipe · ${RECIPE_RAR[r.name]?RAR[RECIPE_RAR[r.name]][0]+" · ":""}${esc(r.r.unlock)}</div></span>${isLearned(r.r)?`<span class="kind" style="background:var(--sell);color:#111">LEARNED</span>`:`<span class="kind" style="background:var(--print);color:#111">NEW</span>`}</button>`;
+  return `<button class="res${i===sel?" sel":""}" data-res="${i}"><span class="ico" style="--rc:var(--keep)">${svg("cube")}</span><span class="meta"><div class="nm">${esc(r.name)}</div><div class="sub">FOB · ${nDone(r.u)} / ${r.u.tiers.length} done</div></span><span class="kind">FOB</span></button>`;
+}
+function onSearch(e){
+  const raw=$("#q").value;
+  $("#clr").style.display=raw?"block":"none";
+  clearTimeout(autoTimer);
+  if(cur==="craft"){$("#results").classList.add("hide");results=[];renderCraft();return;}
+  results=searchAll(raw);sel=0;
+  const box=$("#results");
+  if(!raw.trim()){box.classList.add("hide");return;}
+  if(!results.length){box.innerHTML=`<div class="res-n">No match.</div>`;box.classList.remove("hide");return;}
+  box.innerHTML=(results.length>1?`<div class="res-n">${results.length} matches</div>`:"")+results.slice(0,30).map(resHTML).join("");
+  box.classList.remove("hide");
+  if(results.length===1&&e&&e.type==="input") autoTimer=setTimeout(()=>go(results[0],true),650);
+}
+function flashEl(el){
+  if(!el) return;
+  const hh=document.querySelector("header").offsetHeight;
+  const top=el.getBoundingClientRect().top+window.scrollY-hh-Math.max(12,(innerHeight-hh-el.offsetHeight)/3);
+  window.scrollTo({top:Math.max(0,top),behavior:"smooth"});
+  el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");
+}
+function go(r,auto){
+  clearTimeout(autoTimer);navPush();
+  $("#results").classList.add("hide");if(!auto) $("#q").blur();
+  if(r.kind==="item"){
+    if(filter!=="all"&&assess(r.it).v!==filter){filter="all";renderStash();}
+    tab("loot",true);
+    flashEl([...document.querySelectorAll("#list [data-item]")].find(e=>e.dataset.item===r.name));
+  }else if(r.kind==="manual"){
+    craftView="manuals";craftFilter="all";renderCraft();tab("craft",true);
+    flashEl([...document.querySelectorAll("#craftList [data-manual]")].find(e=>e.dataset.manual===r.name));
+  }else if(r.kind==="recipe"){
+    if(craftView!=="recipes"||craftFilter!=="all"){craftView="recipes";craftFilter="all";renderCraft();}
+    tab("craft",true);
+    flashEl([...document.querySelectorAll("#craftList [data-recipe]")].find(e=>e.dataset.recipe===r.name));
+  }else{
+    tab("fob",true);
+    flashEl(document.querySelector(`#tree [data-upid="${r.u.id}"]`));
+  }
+}
+$("#q").addEventListener("input",onSearch);
+$("#q").addEventListener("focus",()=>{if($("#q").value.trim()) onSearch();});
+$("#q").addEventListener("keydown",e=>{
+  if(!results.length) return;
+  if(e.key==="Enter"){e.preventDefault();go(results[sel]);}
+  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    e.preventDefault();sel=(sel+(e.key==="ArrowDown"?1:-1)+results.length)%Math.min(results.length,30);
+    $("#results").querySelectorAll(".res").forEach((n,i)=>n.classList.toggle("sel",i===sel));
+  }
+});
+$("#results").addEventListener("click",e=>{const b=e.target.closest("[data-res]");if(b) go(results[+b.dataset.res]);});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest(".search")) $("#results").classList.add("hide");});
+$("#clr").addEventListener("click",()=>{$("#q").value="";onSearch();$("#q").focus();});
+
+let cur="loot";
+function tab(which,keepScroll){
+  cur=which;
+  $("#tStash").classList.toggle("on",which==="loot");$("#tCraft").classList.toggle("on",which==="craft");$("#tFob").classList.toggle("on",which==="fob");
+  $("#stashView").classList.toggle("hide",which!=="loot");$("#craftView").classList.toggle("hide",which!=="craft");$("#fobView").classList.toggle("hide",which!=="fob");
+  $("#chips").classList.toggle("hide",which!=="loot");
+  if(which==="craft") renderCraft();
+  try{if(location.hash!=="#"+which) history.replaceState(null,"","#"+which);}catch(e){}
+  if(!keepScroll) window.scrollTo(0,0);
+}
+$("#tStash").addEventListener("click",()=>{if(cur!=="loot")navPush();tab("loot");});
+$("#tCraft").addEventListener("click",()=>{if(cur!=="craft")navPush();tab("craft");});
+$("#tFob").addEventListener("click",()=>{if(cur!=="fob")navPush();tab("fob");});
+$("#resetBtn").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");$("#resetYes").classList.toggle("hide");});
+$("#resetYes").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");done={};learned=new Set();manuals=new Set();save();saveL();saveM();$("#resetYes").classList.add("hide");renderFob();renderStash();renderCraft();refreshCode();codeMsg("Reset");});
+
+/* ---------- progress code ---------- */
+// FOB1- then one digit per upgrade, in UPGRADES order
+/* Progress code - FORMAT RULES, so old codes and saves keep working after updates:
+   - UPGRADES, RECIPES and MANUALS are positional: only ever APPEND new entries at the end. Never reorder or delete
+     (keep a retired entry in place). New entries decode as not done / not learned from older codes.
+   - One base36 character per upgrade (0-9 then A-Z), so an upgrade can grow past 9 tiers.
+   - Shorter codes (made before an upgrade was added) and longer codes (from a newer version) both load.
+   - A real format change gets a new prefix (FOB2-) with FOB1 decoding kept. */
+const encodeState=(d,l,mn)=>{let b=0n;RECIPES.forEach((r,i)=>{if(l.has(r.name))b|=1n<<BigInt(i);});let mb=0n;MANUALS.forEach((w,i)=>{if(mn.has(w.n))mb|=1n<<BigInt(i);});return "FOB1-"+UPGRADES.map(u=>Math.min(d[u.id]||0,u.tiers.length).toString(36)).join("").toUpperCase()+(b||mb?"-"+b.toString(36).toUpperCase():"")+(mb?"-"+mb.toString(36).toUpperCase():"");};
+const makeCode=()=>encodeState(done,learned,manuals);
+const b36=str=>{let v=0n;for(const ch of (str||"").toLowerCase()) v=v*36n+BigInt(parseInt(ch,36));return v;};
+function parseCode(text){
+  const m=String(text).toUpperCase().match(/FOB1-([0-9A-Z]+)(?:-([0-9A-Z]+))?(?:-([0-9A-Z]+))?(?:\.(\d+))?/);
+  if(!m) return null;
+  const d={};UPGRADES.forEach((u,i)=>{d[u.id]=Math.min(parseInt(m[1][i]||"0",36)||0,u.tiers.length);});
+  const bits=b36(m[2]),mbits=b36(m[3]);
+  const l=new Set(RECIPES.filter((r,i)=>(bits>>BigInt(i))&1n).map(r=>r.name));
+  const mn=new Set(MANUALS.filter((w,i)=>(mbits>>BigInt(i))&1n).map(w=>w.n));
+  return {code:encodeState(d,l,mn),done:d,learned:l,manuals:mn,lvl:m[4]?+m[4]:0};
+}
+let pending=null;
+function refreshCode(){if(document.activeElement!==$("#code")&&!pending) $("#code").value=makeCode();}
+const codeMsg=t=>{$("#codeMsg").textContent=t;};
+$("#copyBtn").addEventListener("click",async()=>{
+  const c=makeCode();$("#code").value=c;$("#code").select();
+  try{await navigator.clipboard.writeText(c);codeMsg("Copied");}catch(e){codeMsg("Selected");}
+});
+// Inside the Claude artifact viewer, saving goes through its downloads capability; elsewhere a plain download.
+let dlNS=null;try{if(window.claude&&typeof claude.use==="function") claude.use("downloads").then(n=>{dlNS=n;}).catch(()=>{});}catch(e){}
+$("#saveBtn").addEventListener("click",async()=>{
+  const c=makeCode();$("#code").value=c;
+  const d=new Date(),fn=`mw4-dmz-progress-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.txt`;
+  if(dlNS){
+    try{await dlNS.save({filename:fn,data:c+"\n"});codeMsg("Saved");}
+    catch(e){codeMsg(e&&e.code==="declined"?"Not saved":"Couldn't save here");}
+    return;
+  }
+  try{
+    const url=URL.createObjectURL(new Blob([c+"\n"],{type:"text/plain"}));
+    const a=document.createElement("a");a.href=url;a.download=fn;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);codeMsg("Saved");
+  }catch(e){codeMsg("Couldn't save here");}
+});
+function askLoad(text){
+  const p=parseCode(text);
+  $("#loadAsk").classList.add("hide");pending=null;
+  if(!p){codeMsg("Not a valid code");return;}
+  $("#code").value=p.code;
+  if(p.code===makeCode()&&!p.lvl){codeMsg("Already loaded");return;}
+  pending=p;codeMsg("Replace your current progress with this code?");$("#loadAsk").classList.remove("hide");
+}
+function applyLoad(p){
+  done=p.done;learned=p.learned;manuals=p.manuals;
+  if(p.lvl) tickLevel(p.lvl);
+  save();saveL();saveM();renderFob();renderStash();renderCraft();$("#code").blur();refreshCode();codeMsg("Loaded");
+}
+$("#loadBtn").addEventListener("click",()=>askLoad($("#code").value));
+$("#loadYes").addEventListener("click",()=>{if(pending) applyLoad(pending);pending=null;$("#loadAsk").classList.add("hide");});
+$("#loadNo").addEventListener("click",()=>{pending=null;$("#loadAsk").classList.add("hide");codeMsg("");refreshCode();});
+$("#fileBtn").addEventListener("click",()=>$("#fileIn").click());
+$("#fileIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f) return;
+  try{askLoad(await f.text());}catch(err){codeMsg("Couldn't read that file");}});
+document.addEventListener("click",e=>{if(e.target.closest(".node")) refreshCode();});
+refreshCode();
+
+window.addEventListener("popstate",()=>{if(navStack.length) goBack();});
+renderStash();renderFob();renderCraft();
+tab(["fob","craft","loot"].includes(location.hash.slice(1))?location.hash.slice(1):"loot");
+</script>
+</body>
+</html>

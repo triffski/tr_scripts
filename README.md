@@ -10,5 +10,6 @@ Read the docstrings for more info, back up your files first and don't blame me i
 | `exif` | Harvest metadata from downloaded Facebook, Instagram and Flickr archives and write it back into the photos or XMP sidecars, ready for Immich. |
 | `immich` | Immich API helpers for tasks that would be very tedious otherwise - source/album tagging, untagging, culling empty albums, library counts. |
 | `geo` | Extract data from a Google Maps 'Takeout' for use with OsmAnd, Organic Maps etc. |
+| `games` | Single-file web tools for games - currently MW4 DMZ Quartermaster, a stash, FOB and crafting tracker. |
 
 Music tools, including the Ableton themes installer, now live in [tr_musictools](https://github.com/triffski/tr_musictools).
