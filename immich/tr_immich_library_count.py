@@ -4,7 +4,7 @@ tr_immich_library_count.py - Count assets in an Immich external library and tall
 by file extension, to diagnose phantom (xmp/json) imports vs real images.
 
 Auth: --api-key, else IMMICH_API_KEY env, else ~/.immich_key.
-Server defaults to http://localhost:2283.
+Server defaults to http://localhost:2283 .
 
 Usage:
   python3 tr_immich_library_count.py --library <library-id>
