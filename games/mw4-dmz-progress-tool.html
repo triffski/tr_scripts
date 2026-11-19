@@ -871,10 +871,10 @@ function renderManuals(){
   const nL=pool.filter(manualHave).length;
   $("#craftChips").innerHTML=[["all","All",pool.length],["learned","Learned",nL],["todo","Not learned",pool.length-nL]].map(([k,l,n])=>`<button class="${craftFilter===k?"on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
   const rows=pool.filter(w=>craftFilter==="all"||(craftFilter==="learned")===manualHave(w)).sort((a,b)=>order.indexOf(a.c)-order.indexOf(b.c)||a.n.localeCompare(b.n));
-  const cnt={};for(const w of rows) cnt[w.c]=(cnt[w.c]||0)+1;
+  const cnt={},got={};for(const w of pool){cnt[w.c]=(cnt[w.c]||0)+1;if(manualHave(w)) got[w.c]=(got[w.c]||0)+1;}
   let html="",last=null;
   for(const w of rows){
-    if(w.c!==last){html+=`<div class="cat-h">${WPLURAL[w.c]}<b>${cnt[w.c]}</b></div>`;last=w.c;}
+    if(w.c!==last){html+=`<div class="cat-h">${WPLURAL[w.c]}<b>${got[w.c]||0}/${cnt[w.c]}</b></div>`;last=w.c;}
     const L=manualHave(w);
     html+=`<div class="up craft${L?" learnt":""}" data-manual="${esc(w.n)}"><div class="craft-h"><span class="ico" style="--rc:var(--r-c)">${svg(WCLASS[w.c][1])}</span><div class="meta"><div class="nm">${esc(w.n)}</div><div class="sub">${w.m?"":"No manual needed · "}${w.p?`Gunsmith $${w.p.toLocaleString("en-GB")}`:"Gunsmith $??"}</div></div><button class="learn${L?" on":""}" data-man="${esc(w.n)}"${w.m?"":" disabled"} aria-label="Learned"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div></div>`;
   }
@@ -889,11 +889,11 @@ function renderCraft(){
   const nL=pool.filter(isLearned).length;
   $("#craftChips").innerHTML=[["all","All",pool.length],["learned","Learned",nL],["todo","Not learned",pool.length-nL]].map(([k,l,n])=>`<button class="${craftFilter===k?"on":""}" data-cf="${k}">${l} <b>${n}</b></button>`).join("");
   const rows=pool.filter(r=>craftFilter==="all"||(craftFilter==="learned")===isLearned(r)).sort((a,b)=>(RCAT_ORDER.indexOf(rCat(a))-RCAT_ORDER.indexOf(rCat(b)))||(routeOrd(a.unlock)-routeOrd(b.unlock))||a.name.localeCompare(b.name));
-  const cnt={};for(const r of rows) cnt[rCat(r)]=(cnt[rCat(r)]||0)+1;
+  const cnt={},got={};for(const r of pool){const c=rCat(r);cnt[c]=(cnt[c]||0)+1;if(isLearned(r)) got[c]=(got[c]||0)+1;}
   let lastCat=null;
   if(!rows.length){$("#craftList").innerHTML=`<div class="empty">None.</div>`;return;}
   $("#craftList").innerHTML=rows.map(r=>{
-    const c=rCat(r),hdr=c!==lastCat?`<div class="cat-h">${c}<b>${cnt[c]}</b></div>`:"";lastCat=c;
+    const c=rCat(r),hdr=c!==lastCat?`<div class="cat-h">${c}<b>${got[c]||0}/${cnt[c]}</b></div>`:"";lastCat=c;
     const makes=ITEMS[r.name];
     const chips=r.inputs.map(i=>{
       const it=ITEMS[i.n];
